@@ -1,0 +1,21 @@
+{
+  "name": "bristol-whats-on-this-week",
+  "version": "1.0.0",
+  "description": "Weekly updated web page showing all events happening in Bristol",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "fetch-events": "node src/index.js",
+    "start": "npm test && npm run fetch-events"
+  },
+  "keywords": ["bristol", "events", "weekly"],
+  "author": "Jason Rees",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

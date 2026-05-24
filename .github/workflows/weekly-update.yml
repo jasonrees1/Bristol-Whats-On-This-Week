@@ -1,0 +1,57 @@
+name: Weekly Event Update
+
+on:
+  schedule:
+    - cron: '0 10 * * 6'  # Every Saturday at 10 AM UTC
+  workflow_dispatch:     # Allow manual trigger
+
+jobs:
+  fetch-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+        continue-on-error: false
+
+      - name: Fetch events and generate HTML
+        run: npm run fetch-events
+        env:
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          EVENTBRITE_API_KEY: ${{ secrets.EVENTBRITE_API_KEY }}
+          SONGKICK_API_KEY: ${{ secrets.SONGKICK_API_KEY }}
+
+      - name: Commit and push if changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add index.html
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update events for week of $(date +%Y-%m-%d)" && git push)
+
+      - name: Notify on failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.EMAIL_SERVER }}
+          server_port: ${{ secrets.EMAIL_PORT }}
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: 'Bristol Events Update Failed'
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          from: 'Bristol Events Bot'
+          body: |
+            The weekly Bristol events update failed!
+
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Please check the logs and fix any issues.
