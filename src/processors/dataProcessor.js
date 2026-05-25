@@ -60,20 +60,23 @@ class DataProcessor {
   determineCategory(name, description) {
     const text = `${name} ${description}`.toLowerCase();
 
-    const categories = {
-      'Concert': ['concert', 'live music', 'band', 'performance', 'musician'],
-      'Festival': ['festival', 'fest'],
-      'Theater': ['theater', 'theatre', 'play', 'comedy', 'stand-up', 'show'],
-      'Sports': ['sports', 'match', 'game', 'football', 'rugby', 'cricket'],
-      'Art': ['art', 'gallery', 'exhibition', 'museum', 'visual art'],
-      'Food': ['food', 'market', 'pop-up', 'tasting', 'restaurant', 'cafe'],
-      'Family': ['family', 'kids', 'children', 'youth'],
-      'Nightlife': ['club', 'nightlife', 'dj', 'disco', 'party'],
-      'Conference': ['conference', 'workshop', 'seminar', 'talk', 'conference'],
-      'Tour': ['tour', 'walking tour', 'sightseeing', 'guided']
-    };
+    // Ordered: most specific / most common Bristol event types first.
+    // Avoid short words that appear as substrings ('art' in 'party', 'show' in descriptions, etc.)
+    const categories = [
+      ['Festival',    ['festival']],
+      ['Nightlife',   ['rave', 'club night', 'nightclub', 'dj set', 'dnb', 'drum and bass', 'drum n bass', 'house music', 'techno', 'grime', 'bass music', 'after dark', 'after-dark', 'disco', 'party', 'nightlife', 'dj']],
+      ['Concert',     ['concert', 'live music', 'live band', 'live act', 'open mic', 'musician', 'orchestra', 'choir', 'jam night', 'sound system', 'gig', 'music']],
+      ['Theater',     ['theatre', 'theater', 'comedy', 'pantomime', 'stand-up', 'improv', 'comedian', 'cabaret', 'burlesque']],
+      ['Sports',      ['football', 'rugby', 'cricket', 'tennis', 'boxing', 'marathon', 'athletics', 'triathlon', 'cycling', 'sports', 'tournament']],
+      ['Art',         ['gallery', 'exhibition', 'visual art', 'art show', 'art fair', 'life drawing', 'painting class', 'printmaking', 'sculpture', 'ceramics', 'museum']],
+      ['Family',      ['family', 'kids', 'children', 'toddler', 'youth']],
+      ['Food',        ['restaurant', 'food', 'cafe', 'tasting', 'supper club', 'street food', 'pop-up dining']],
+      ['Market',      ['craft market', 'food market', 'farmers market', 'craft fair', 'artisan fair', 'flea market', 'boot sale', 'street market']],
+      ['Conference',  ['conference', 'workshop', 'seminar', 'networking', 'meetup', 'webinar']],
+      ['Tour',        ['walking tour', 'guided tour', 'sightseeing']],
+    ];
 
-    for (const [category, keywords] of Object.entries(categories)) {
+    for (const [category, keywords] of categories) {
       if (keywords.some(keyword => text.includes(keyword))) {
         return category;
       }
