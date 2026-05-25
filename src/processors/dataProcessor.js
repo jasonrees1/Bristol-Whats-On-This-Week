@@ -34,8 +34,9 @@ class DataProcessor {
   }
 
   createDuplicateKey(event) {
-    const name = event.name.toLowerCase().trim();
-    const date = new Date(event.date).toISOString().split('T')[0];
+    const name = (event.name || '').toLowerCase().trim();
+    const d = new Date(event.date);
+    const date = isNaN(d.getTime()) ? 'unknown' : d.toISOString().split('T')[0];
     return `${name}-${date}`;
   }
 
