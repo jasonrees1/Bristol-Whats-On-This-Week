@@ -37,18 +37,20 @@ class EventFetcher {
         return [];
       }
 
-      return response.data.results.map(event => ({
-        id: `skiddle-${event.id}`,
-        source: 'skiddle',
-        name: event.heading,
-        description: event.description || '',
-        date: event.startdate + (event.doortime ? `T${event.doortime}:00` : ''),
-        venue: event.venue?.name || 'Venue TBA',
-        cost: this.extractSkiddleCost(event),
-        url: event.link,
-        image: event.largeimageurl || event.imageurl || null,
-        status: this.extractSkiddleStatus(event)
-      }));
+      return response.data.results
+        .map(event => ({
+          id: `skiddle-${event.id}`,
+          source: 'skiddle',
+          name: event.heading || event.title || event.eventname || null,
+          description: event.description || '',
+          date: event.startdate + (event.doortime ? `T${event.doortime}:00` : ''),
+          venue: event.venue?.name || 'Venue TBA',
+          cost: this.extractSkiddleCost(event),
+          url: event.link,
+          image: event.largeimageurl || event.imageurl || null,
+          status: this.extractSkiddleStatus(event)
+        }))
+        .filter(event => event.name);
     } catch (error) {
       console.error('Skiddle API error:', error.message);
       return [];
