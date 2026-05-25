@@ -1437,13 +1437,66 @@ All levels welcome!</div>
         let selectedDay = new Date().toISOString().split('T')[0];
         let selectedCategories = new Set(['Concert', 'Festival', 'Theater', 'Sports', 'Art', 'Food', 'Family', 'Nightlife', 'Conference', 'Tour', 'Market', 'Other']);
 
+        const categoryColors = {"Concert":"#1E90FF","Festival":"#FF69B4","Theater":"#9B59B6","Sports":"#2ECC71","Art":"#E74C3C","Food":"#E67E22","Family":"#FF69B4","Nightlife":"#2C3E50","Conference":"#95A5A6","Tour":"#A0826D","Market":"#F39C12","Other":"#7F8C8D"};
+
         function getDateKey(dateString) {
           return new Date(dateString).toISOString().split('T')[0];
         }
 
-        function getDayName(dateString) {
-          const date = new Date(dateString + 'T00:00:00Z');
-          return date.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' });
+        function darkenColor(color) {
+          const num = parseInt(color.replace("#", ""), 16);
+          const amt = Math.round(2.55 * -20);
+          return "#" + (0x1000000 +
+            (Math.max(0, Math.min(255, (num >> 16) + amt)) << 16) +
+            (Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amt)) << 8) +
+            Math.max(0, Math.min(255, (num & 0x0000FF) + amt))).toString(16).slice(1);
+        }
+
+        function renderEventCard(event) {
+          const categoryColor = categoryColors[event.category] || '#7F8C8D';
+          const imageHtml = event.image
+            ? `<img src="${event.image}" alt="${event.name}" class="event-image">`
+            : `<div class="event-image" style="background: linear-gradient(135deg, ${categoryColor} 0%, ${darkenColor(categoryColor)} 100%);"></div>`;
+          const timeDisplay = event.date
+            ? new Date(event.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+            : 'Date TBA';
+          const status = event.status || null;
+          const statusLabels = { cancelled: 'Cancelled', sold_out: 'Sold Out', postponed: 'Postponed', rescheduled: 'Rescheduled', off_sale: 'Off Sale' };
+          const statusBanner = status ? `<div class="status-banner status-${status}">${statusLabels[status] || status}</div>` : '';
+          const cardClass = status ? ` is-${status}` : '';
+          const learnMoreBtn = status === 'cancelled'
+            ? `<span class="btn btn-primary" style="cursor:default;">Cancelled</span>`
+            : status === 'sold_out'
+              ? `<span class="btn btn-primary" style="cursor:default;">Sold Out</span>`
+              : `<a href="${event.url}" target="_blank" class="btn btn-primary">Learn More</a>`;
+          const desc = event.description
+            ? (event.description.length > 150 ? event.description.substring(0, 150) + '...' : event.description)
+            : '';
+          const calData = JSON.stringify(event).replace(/"/g, '&quot;');
+          return `
+            <div class="event-card-wrapper" style="position:relative;">
+              ${statusBanner}
+              <div class="event-card${cardClass}">
+                ${imageHtml}
+                <div class="event-content">
+                  <div class="event-header">
+                    <div class="event-time">🕐 ${timeDisplay}</div>
+                    <span class="event-category" style="background-color: ${categoryColor};">${event.category || 'Other'}</span>
+                  </div>
+                  <div class="event-name">${event.name}</div>
+                  <div class="event-meta">
+                    <div class="event-meta-item">📍 ${event.venue || 'Venue TBA'}</div>
+                    ${event.cost ? `<div class="event-meta-item">💷 ${event.cost}</div>` : ''}
+                  </div>
+                  ${desc ? `<div class="event-description">${desc}</div>` : ''}
+                  <div class="event-actions">
+                    ${learnMoreBtn}
+                    <button class="btn btn-secondary" onclick="addEventToCalendar(${calData})">📅 Add to Calendar</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
         }
 
         function filterAndDisplayEvents() {
@@ -1458,7 +1511,7 @@ All levels welcome!</div>
           if (filtered.length === 0) {
             container.innerHTML = '<div class="no-events"><p>No events found for this day and category selection.</p></div>';
           } else {
-            container.innerHTML = filtered.map(e => this.generateEventCard(e)).join('');
+            container.innerHTML = filtered.map(e => renderEventCard(e)).join('');
           }
         }
 
