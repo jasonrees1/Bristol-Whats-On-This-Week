@@ -456,10 +456,17 @@ class HtmlGenerator {
           var container = document.getElementById('eventsContainer');
           try {
             var filtered = events.filter(function(ev) {
-              return (!selectedCategory || ev.category === selectedCategory) && getDateKey(ev.date) === selectedDay;
+              var catMatch = !selectedCategory || ev.category === selectedCategory;
+              var dayMatch = !selectedDay || getDateKey(ev.date) === selectedDay;
+              return catMatch && dayMatch;
             });
             if (filtered.length === 0) {
-              container.innerHTML = '<div class="no-events"><p>No events found for this day and category selection.</p></div>';
+              var msg = selectedCategory && selectedDay
+                ? 'No ' + selectedCategory + ' events on this day.'
+                : selectedCategory
+                  ? 'No ' + selectedCategory + ' events found this week.'
+                  : 'No events found for this day.';
+              container.innerHTML = '<div class="no-events"><p>' + h(msg) + '</p></div>';
             } else {
               container.innerHTML = filtered.map(renderEventCard).join('');
             }
@@ -490,9 +497,14 @@ class HtmlGenerator {
 
         document.querySelectorAll('.day-btn').forEach(function(btn) {
           btn.addEventListener('click', function() {
+            var date = this.dataset.date;
             document.querySelectorAll('.day-btn').forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            selectedDay = this.dataset.date;
+            if (selectedDay === date) {
+              selectedDay = null;
+            } else {
+              selectedDay = date;
+              this.classList.add('active');
+            }
             filterAndDisplayEvents();
           });
         });
@@ -500,12 +512,16 @@ class HtmlGenerator {
         document.querySelectorAll('.category-btn').forEach(function(btn) {
           btn.addEventListener('click', function() {
             var category = this.dataset.category;
+            document.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.day-btn').forEach(function(b) { b.classList.remove('active'); });
             if (selectedCategory === category) {
               selectedCategory = null;
-              document.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('active'); });
+              selectedDay = new Date().toISOString().split('T')[0];
+              var todayBtn2 = document.querySelector('[data-date="' + selectedDay + '"]');
+              if (todayBtn2) { todayBtn2.classList.add('active'); }
             } else {
               selectedCategory = category;
-              document.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('active'); });
+              selectedDay = null;
               this.classList.add('active');
             }
             filterAndDisplayEvents();
