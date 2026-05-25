@@ -114,7 +114,8 @@ class HtmlGenerator {
 
         .category-btn {
           padding: 10px 16px;
-          border: 2px solid #ddd;
+          border: 2px solid var(--cat-color, #ddd);
+          color: var(--cat-color, #666);
           background: white;
           border-radius: 20px;
           cursor: pointer;
@@ -126,8 +127,9 @@ class HtmlGenerator {
 
         .category-btn:hover { transform: translateY(-2px); }
         .category-btn.active {
+          background: var(--cat-color, #ddd);
           color: white;
-          border-color: transparent;
+          border-color: var(--cat-color, #ddd);
         }
 
         /* Events Grid */
@@ -380,7 +382,7 @@ class HtmlGenerator {
         events.forEach(function(e) { eventsById[e.id] = e; });
 
         var selectedDay = new Date().toISOString().split('T')[0];
-        var selectedCategories = {'Concert':1,'Festival':1,'Theater':1,'Sports':1,'Art':1,'Food':1,'Family':1,'Nightlife':1,'Conference':1,'Tour':1,'Market':1,'Other':1};
+        var selectedCategory = null;
 
         var categoryColors = ${JSON.stringify(this.categoryColors)};
 
@@ -454,7 +456,7 @@ class HtmlGenerator {
           var container = document.getElementById('eventsContainer');
           try {
             var filtered = events.filter(function(ev) {
-              return selectedCategories[ev.category] && getDateKey(ev.date) === selectedDay;
+              return (!selectedCategory || ev.category === selectedCategory) && getDateKey(ev.date) === selectedDay;
             });
             if (filtered.length === 0) {
               container.innerHTML = '<div class="no-events"><p>No events found for this day and category selection.</p></div>';
@@ -498,11 +500,12 @@ class HtmlGenerator {
         document.querySelectorAll('.category-btn').forEach(function(btn) {
           btn.addEventListener('click', function() {
             var category = this.dataset.category;
-            if (selectedCategories[category]) {
-              delete selectedCategories[category];
-              this.classList.remove('active');
+            if (selectedCategory === category) {
+              selectedCategory = null;
+              document.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('active'); });
             } else {
-              selectedCategories[category] = 1;
+              selectedCategory = category;
+              document.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('active'); });
               this.classList.add('active');
             }
             filterAndDisplayEvents();
@@ -543,7 +546,7 @@ class HtmlGenerator {
   generateCategoryButtons(type) {
     const categories = type === 'main' ? this.mainCategories : this.additionalCategories;
     return categories.map(cat => `
-      <button class="category-btn active" data-category="${cat}" style="border-color: ${this.categoryColors[cat]}; color: ${this.categoryColors[cat]};">
+      <button class="category-btn" data-category="${cat}" style="--cat-color: ${this.categoryColors[cat]};">
         ${cat}
       </button>
     `).join('');
