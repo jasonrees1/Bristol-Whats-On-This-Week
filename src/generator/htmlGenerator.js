@@ -289,6 +289,10 @@ class HtmlGenerator {
           background: #8e44ad;
           color: white;
         }
+        .status-off_sale {
+          background: #95a5a6;
+          color: white;
+        }
         .event-card.is-cancelled {
           opacity: 0.6;
           filter: grayscale(60%);
@@ -486,7 +490,7 @@ class HtmlGenerator {
     const imageHtml = event.image ? `<img src="${event.image}" alt="${event.name}" class="event-image">` : `<div class="event-image" style="background: linear-gradient(135deg, ${categoryColor} 0%, ${this.darkenColor(categoryColor)} 100%);"></div>`;
     const timeDisplay = event.date ? new Date(event.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Date TBA';
     const status = event.status || null;
-    const statusLabels = { cancelled: 'Cancelled', sold_out: 'Sold Out', postponed: 'Postponed', rescheduled: 'Rescheduled' };
+    const statusLabels = { cancelled: 'Cancelled', sold_out: 'Sold Out', postponed: 'Postponed', rescheduled: 'Rescheduled', off_sale: 'Off Sale' };
     const statusBanner = status ? `<div class="status-banner status-${status}">${statusLabels[status] || status}</div>` : '';
     const cardClass = status ? ` is-${status}` : '';
     const learnMoreBtn = status === 'cancelled'

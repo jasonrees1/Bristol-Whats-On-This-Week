@@ -27,7 +27,12 @@ class EventFetcher {
         return [];
       }
 
-      return response.data._embedded.events.map(event => ({
+      const rawEvents = response.data._embedded.events;
+
+      console.log(`Fetching individual details for ${rawEvents.length} Ticketmaster events...`);
+      const detailsMap = await this.fetchTicketmasterDetailsInBatches(rawEvents.map(e => e.id));
+
+      return rawEvents.map(event => ({
         id: `ticketmaster-${event.id}`,
         source: 'ticketmaster',
         name: event.name,
@@ -37,11 +42,43 @@ class EventFetcher {
         cost: this.extractCost(event),
         url: event.url,
         image: event.images?.[0]?.url || null,
-        status: this.extractTicketmasterStatus(event)
+        status: this.extractTicketmasterStatus(event, detailsMap.get(event.id))
       }));
     } catch (error) {
       console.error('Ticketmaster API error:', error.message);
       return [];
+    }
+  }
+
+  async fetchTicketmasterDetailsInBatches(eventIds) {
+    const BATCH_SIZE = 20;
+    const detailsMap = new Map();
+
+    for (let i = 0; i < eventIds.length; i += BATCH_SIZE) {
+      const batch = eventIds.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(batch.map(id => this.fetchTicketmasterEventDetail(id)));
+      results.forEach((detail, idx) => {
+        if (detail) detailsMap.set(batch[idx], detail);
+      });
+      if (i + BATCH_SIZE < eventIds.length) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+      }
+    }
+
+    return detailsMap;
+  }
+
+  async fetchTicketmasterEventDetail(eventId) {
+    try {
+      const response = await axios.get(
+        `https://app.ticketmaster.com/discovery/v2/events/${eventId}.json`,
+        { params: { apikey: this.ticketmasterApiKey } }
+      );
+      const d = response.data;
+      console.log(`[TM detail] "${d.name}" status=${d.dates?.status?.code} ticketLimit=${JSON.stringify(d.ticketLimit)} salesEnd=${d.sales?.public?.endDateTime}`);
+      return d;
+    } catch (error) {
+      return null;
     }
   }
 
@@ -86,12 +123,28 @@ class EventFetcher {
     }
   }
 
-  extractTicketmasterStatus(event) {
-    const code = event.dates?.status?.code;
-    if (code === 'cancelled') return 'cancelled';
-    if (code === 'postponed') return 'postponed';
-    if (code === 'rescheduled') return 'rescheduled';
-    if (code === 'offsale') return 'sold_out';
+  extractTicketmasterStatus(event, details) {
+    // Check search-result status first (cancelled/postponed/rescheduled are reliable)
+    const searchCode = event.dates?.status?.code;
+    if (searchCode === 'cancelled') return 'cancelled';
+    if (searchCode === 'postponed') return 'postponed';
+    if (searchCode === 'rescheduled') return 'rescheduled';
+
+    if (details) {
+      const detailCode = details.dates?.status?.code;
+      if (detailCode === 'cancelled') return 'cancelled';
+      if (detailCode === 'postponed') return 'postponed';
+      if (detailCode === 'rescheduled') return 'rescheduled';
+      // offsale in individual detail = sale has ended (most likely sold out or withdrawn)
+      if (detailCode === 'offsale') return 'sold_out';
+
+      // Check ticketLimit.info text for explicit sold-out language
+      const limitInfo = (details.ticketLimit?.info || '').toLowerCase();
+      if (limitInfo.includes('sold out') || limitInfo.includes('sold-out')) return 'sold_out';
+    }
+
+    // offsale in search result only = off sale but not confirmed sold out
+    if (searchCode === 'offsale') return 'off_sale';
     return null;
   }
 
