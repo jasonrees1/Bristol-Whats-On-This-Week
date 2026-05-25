@@ -430,21 +430,26 @@ class HtmlGenerator {
     return events.map(event => this.generateEventCard(event)).join('');
   }
 
+  renderEvent(event) {
+    return this.generateEventCard(event);
+  }
+
   generateEventCard(event) {
     const categoryColor = this.categoryColors[event.category] || '#7F8C8D';
     const imageHtml = event.image ? `<img src="${event.image}" alt="${event.name}" class="event-image">` : `<div class="event-image" style="background: linear-gradient(135deg, ${categoryColor} 0%, ${this.darkenColor(categoryColor)} 100%);"></div>`;
+    const timeDisplay = event.date ? new Date(event.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Date TBA';
 
     return `
       <div class="event-card">
         ${imageHtml}
         <div class="event-content">
           <div class="event-header">
-            <div class="event-time">🕐 ${new Date(event.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</div>
-            <span class="event-category" style="background-color: ${categoryColor};">${event.category}</span>
+            <div class="event-time">🕐 ${timeDisplay}</div>
+            <span class="event-category" style="background-color: ${categoryColor};">${event.category || 'Other'}</span>
           </div>
           <div class="event-name">${event.name}</div>
           <div class="event-meta">
-            <div class="event-meta-item">📍 ${event.venue}</div>
+            <div class="event-meta-item">📍 ${event.venue || 'Venue TBA'}</div>
             ${event.cost ? `<div class="event-meta-item">💷 ${event.cost}</div>` : ''}
           </div>
           ${event.description ? `<div class="event-description">${event.description.substring(0, 150)}${event.description.length > 150 ? '...' : ''}</div>` : ''}
