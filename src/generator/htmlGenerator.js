@@ -443,7 +443,7 @@ class HtmlGenerator {
                 (desc ? '<div class="event-description">' + h(desc) + '</div>' : '') +
                 '<div class="event-actions">' +
                   btn +
-                  '<button class="btn btn-secondary" onclick="addEventToCalendar(\'' + h(ev.id) + '\')">&#128197; Add to Calendar</button>' +
+                  '<button class="btn btn-secondary" onclick="addEventToCalendar(\\'' + h(ev.id) + '\\')">&#128197; Add to Calendar</button>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -472,14 +472,14 @@ class HtmlGenerator {
           if (!ev) return;
           var startDate = new Date(ev.date);
           var endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-          var ical = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Bristol Events//EN\r\nBEGIN:VEVENT\r\n' +
-            'UID:' + ev.id + '\r\n' +
-            'DTSTART:' + startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\r\n' +
-            'DTEND:' + endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\r\n' +
-            'SUMMARY:' + (ev.name || '') + '\r\n' +
-            'DESCRIPTION:' + (ev.description || '') + '\r\n' +
-            'LOCATION:' + (ev.venue || '') + '\r\n' +
-            'END:VEVENT\r\nEND:VCALENDAR';
+          var ical = 'BEGIN:VCALENDAR\\r\\nVERSION:2.0\\r\\nPRODID:-//Bristol Events//EN\\r\\nBEGIN:VEVENT\\r\\n' +
+            'UID:' + ev.id + '\\r\\n' +
+            'DTSTART:' + startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\\r\\n' +
+            'DTEND:' + endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\\r\\n' +
+            'SUMMARY:' + (ev.name || '') + '\\r\\n' +
+            'DESCRIPTION:' + (ev.description || '') + '\\r\\n' +
+            'LOCATION:' + (ev.venue || '') + '\\r\\n' +
+            'END:VEVENT\\r\\nEND:VCALENDAR';
           var link = document.createElement('a');
           link.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ical);
           link.download = (ev.name || 'event') + '.ics';
