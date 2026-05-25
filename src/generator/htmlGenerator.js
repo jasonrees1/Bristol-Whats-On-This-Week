@@ -256,6 +256,53 @@ class HtmlGenerator {
         }
         .btn-secondary:hover { background: #e8e8e8; }
 
+        /* Status badges */
+        .event-card-wrapper {
+          position: relative;
+        }
+        .status-banner {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          padding: 5px 12px;
+          border-radius: 6px;
+          font-size: 0.78em;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          z-index: 10;
+          pointer-events: none;
+        }
+        .status-cancelled {
+          background: #e74c3c;
+          color: white;
+        }
+        .status-sold_out {
+          background: #e67e22;
+          color: white;
+        }
+        .status-postponed {
+          background: #95a5a6;
+          color: white;
+        }
+        .status-rescheduled {
+          background: #8e44ad;
+          color: white;
+        }
+        .event-card.is-cancelled {
+          opacity: 0.6;
+          filter: grayscale(60%);
+        }
+        .event-card.is-cancelled .btn-primary {
+          background: #aaa;
+          pointer-events: none;
+        }
+        .event-card.is-sold_out .btn-primary {
+          background: #aaa;
+          pointer-events: none;
+          cursor: not-allowed;
+        }
+
         .no-events {
           text-align: center;
           padding: 40px 20px;
@@ -438,24 +485,36 @@ class HtmlGenerator {
     const categoryColor = this.categoryColors[event.category] || '#7F8C8D';
     const imageHtml = event.image ? `<img src="${event.image}" alt="${event.name}" class="event-image">` : `<div class="event-image" style="background: linear-gradient(135deg, ${categoryColor} 0%, ${this.darkenColor(categoryColor)} 100%);"></div>`;
     const timeDisplay = event.date ? new Date(event.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Date TBA';
+    const status = event.status || null;
+    const statusLabels = { cancelled: 'Cancelled', sold_out: 'Sold Out', postponed: 'Postponed', rescheduled: 'Rescheduled' };
+    const statusBanner = status ? `<div class="status-banner status-${status}">${statusLabels[status] || status}</div>` : '';
+    const cardClass = status ? ` is-${status}` : '';
+    const learnMoreBtn = status === 'cancelled'
+      ? `<span class="btn btn-primary" style="cursor:default;">Cancelled</span>`
+      : status === 'sold_out'
+        ? `<span class="btn btn-primary" style="cursor:default;">Sold Out</span>`
+        : `<a href="${event.url}" target="_blank" class="btn btn-primary">Learn More</a>`;
 
     return `
-      <div class="event-card">
-        ${imageHtml}
-        <div class="event-content">
-          <div class="event-header">
-            <div class="event-time">🕐 ${timeDisplay}</div>
-            <span class="event-category" style="background-color: ${categoryColor};">${event.category || 'Other'}</span>
-          </div>
-          <div class="event-name">${event.name}</div>
-          <div class="event-meta">
-            <div class="event-meta-item">📍 ${event.venue || 'Venue TBA'}</div>
-            ${event.cost ? `<div class="event-meta-item">💷 ${event.cost}</div>` : ''}
-          </div>
-          ${event.description ? `<div class="event-description">${event.description.substring(0, 150)}${event.description.length > 150 ? '...' : ''}</div>` : ''}
-          <div class="event-actions">
-            <a href="${event.url}" target="_blank" class="btn btn-primary">Learn More</a>
-            <button class="btn btn-secondary" onclick="addEventToCalendar(${JSON.stringify(event).replace(/"/g, '&quot;')})">📅 Add to Calendar</button>
+      <div class="event-card-wrapper" style="position:relative;">
+        ${statusBanner}
+        <div class="event-card${cardClass}">
+          ${imageHtml}
+          <div class="event-content">
+            <div class="event-header">
+              <div class="event-time">🕐 ${timeDisplay}</div>
+              <span class="event-category" style="background-color: ${categoryColor};">${event.category || 'Other'}</span>
+            </div>
+            <div class="event-name">${event.name}</div>
+            <div class="event-meta">
+              <div class="event-meta-item">📍 ${event.venue || 'Venue TBA'}</div>
+              ${event.cost ? `<div class="event-meta-item">💷 ${event.cost}</div>` : ''}
+            </div>
+            ${event.description ? `<div class="event-description">${event.description.substring(0, 150)}${event.description.length > 150 ? '...' : ''}</div>` : ''}
+            <div class="event-actions">
+              ${learnMoreBtn}
+              <button class="btn btn-secondary" onclick="addEventToCalendar(${JSON.stringify(event).replace(/"/g, '&quot;')})">📅 Add to Calendar</button>
+            </div>
           </div>
         </div>
       </div>

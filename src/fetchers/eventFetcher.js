@@ -36,7 +36,8 @@ class EventFetcher {
         venue: event._embedded?.venues?.[0]?.name || 'Venue TBA',
         cost: this.extractCost(event),
         url: event.url,
-        image: event.images?.[0]?.url || null
+        image: event.images?.[0]?.url || null,
+        status: this.extractTicketmasterStatus(event)
       }));
     } catch (error) {
       console.error('Ticketmaster API error:', error.message);
@@ -76,12 +77,28 @@ class EventFetcher {
         venue: event.venue_id ? `Venue ${event.venue_id}` : 'Venue TBA',
         cost: event.ticket_classes?.[0]?.cost?.display || 'Price TBA',
         url: event.url,
-        image: event.logo?.original?.url || null
+        image: event.logo?.original?.url || null,
+        status: this.extractEventbriteStatus(event)
       }));
     } catch (error) {
       console.error('Eventbrite API error:', error.message);
       return [];
     }
+  }
+
+  extractTicketmasterStatus(event) {
+    const code = event.dates?.status?.code;
+    if (code === 'cancelled') return 'cancelled';
+    if (code === 'postponed') return 'postponed';
+    if (code === 'rescheduled') return 'rescheduled';
+    if (code === 'offsale') return 'sold_out';
+    return null;
+  }
+
+  extractEventbriteStatus(event) {
+    if (event.status === 'canceled') return 'cancelled';
+    if (event.ticket_availability?.is_sold_out) return 'sold_out';
+    return null;
   }
 
   extractCost(event) {
