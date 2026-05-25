@@ -375,126 +375,145 @@ class HtmlGenerator {
     </footer>
 
     <script>
-        const events = ${JSON.stringify(events)};
-        let selectedDay = new Date().toISOString().split('T')[0];
-        let selectedCategories = new Set(['Concert', 'Festival', 'Theater', 'Sports', 'Art', 'Food', 'Family', 'Nightlife', 'Conference', 'Tour', 'Market', 'Other']);
+        var events = ${JSON.stringify(events)};
+        var eventsById = {};
+        events.forEach(function(e) { eventsById[e.id] = e; });
 
-        const categoryColors = ${JSON.stringify(this.categoryColors)};
+        var selectedDay = new Date().toISOString().split('T')[0];
+        var selectedCategories = {'Concert':1,'Festival':1,'Theater':1,'Sports':1,'Art':1,'Food':1,'Family':1,'Nightlife':1,'Conference':1,'Tour':1,'Market':1,'Other':1};
 
-        function getDateKey(dateString) {
-          return new Date(dateString).toISOString().split('T')[0];
+        var categoryColors = ${JSON.stringify(this.categoryColors)};
+
+        function h(str) {
+          return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        }
+
+        function getDateKey(ds) {
+          var d = new Date(ds);
+          return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
         }
 
         function darkenColor(color) {
-          const num = parseInt(color.replace("#", ""), 16);
-          const amt = Math.round(2.55 * -20);
-          return "#" + (0x1000000 +
+          var num = parseInt(color.replace('#', ''), 16);
+          var amt = Math.round(2.55 * -20);
+          return '#' + (0x1000000 +
             (Math.max(0, Math.min(255, (num >> 16) + amt)) << 16) +
             (Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amt)) << 8) +
             Math.max(0, Math.min(255, (num & 0x0000FF) + amt))).toString(16).slice(1);
         }
 
-        function renderEventCard(event) {
-          const categoryColor = categoryColors[event.category] || '#7F8C8D';
-          const imageHtml = event.image
-            ? \`<img src="\${event.image}" alt="\${event.name}" class="event-image">\`
-            : \`<div class="event-image" style="background: linear-gradient(135deg, \${categoryColor} 0%, \${darkenColor(categoryColor)} 100%);"></div>\`;
-          const timeDisplay = event.date
-            ? new Date(event.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-            : 'Date TBA';
-          const status = event.status || null;
-          const statusLabels = { cancelled: 'Cancelled', sold_out: 'Sold Out', postponed: 'Postponed', rescheduled: 'Rescheduled', off_sale: 'Off Sale' };
-          const statusBanner = status ? \`<div class="status-banner status-\${status}">\${statusLabels[status] || status}</div>\` : '';
-          const cardClass = status ? \` is-\${status}\` : '';
-          const learnMoreBtn = status === 'cancelled'
-            ? \`<span class="btn btn-primary" style="cursor:default;">Cancelled</span>\`
-            : status === 'sold_out'
-              ? \`<span class="btn btn-primary" style="cursor:default;">Sold Out</span>\`
-              : \`<a href="\${event.url}" target="_blank" class="btn btn-primary">Learn More</a>\`;
-          const desc = event.description
-            ? (event.description.length > 150 ? event.description.substring(0, 150) + '...' : event.description)
-            : '';
-          const calData = JSON.stringify(event).replace(/"/g, '&quot;');
-          return \`
-            <div class="event-card-wrapper" style="position:relative;">
-              \${statusBanner}
-              <div class="event-card\${cardClass}">
-                \${imageHtml}
-                <div class="event-content">
-                  <div class="event-header">
-                    <div class="event-time">🕐 \${timeDisplay}</div>
-                    <span class="event-category" style="background-color: \${categoryColor};">\${event.category || 'Other'}</span>
-                  </div>
-                  <div class="event-name">\${event.name}</div>
-                  <div class="event-meta">
-                    <div class="event-meta-item">📍 \${event.venue || 'Venue TBA'}</div>
-                    \${event.cost ? \`<div class="event-meta-item">💷 \${event.cost}</div>\` : ''}
-                  </div>
-                  \${desc ? \`<div class="event-description">\${desc}</div>\` : ''}
-                  <div class="event-actions">
-                    \${learnMoreBtn}
-                    <button class="btn btn-secondary" onclick="addEventToCalendar(\${calData})">📅 Add to Calendar</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          \`;
+        function renderEventCard(ev) {
+          var cc = categoryColors[ev.category] || '#7F8C8D';
+          var imgHtml = ev.image
+            ? '<img src="' + h(ev.image) + '" alt="' + h(ev.name) + '" class="event-image">'
+            : '<div class="event-image" style="background:linear-gradient(135deg,' + cc + ' 0%,' + darkenColor(cc) + ' 100%);"></div>';
+          var d = new Date(ev.date);
+          var timeStr = isNaN(d.getTime()) ? 'Time TBA' : d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+          var status = ev.status || null;
+          var statusMap = {cancelled:'Cancelled', sold_out:'Sold Out', postponed:'Postponed', rescheduled:'Rescheduled', off_sale:'Off Sale'};
+          var banner = status ? '<div class="status-banner status-' + status + '">' + (statusMap[status] || status) + '</div>' : '';
+          var cardCls = status ? ' is-' + status : '';
+          var btn;
+          if (status === 'cancelled') {
+            btn = '<span class="btn btn-primary" style="cursor:default;">Cancelled</span>';
+          } else if (status === 'sold_out') {
+            btn = '<span class="btn btn-primary" style="cursor:default;">Sold Out</span>';
+          } else {
+            btn = '<a href="' + h(ev.url) + '" target="_blank" class="btn btn-primary">Learn More</a>';
+          }
+          var desc = ev.description ? (ev.description.length > 150 ? ev.description.substring(0, 150) + '...' : ev.description) : '';
+          return '<div class="event-card-wrapper" style="position:relative;">' +
+            banner +
+            '<div class="event-card' + cardCls + '">' +
+              imgHtml +
+              '<div class="event-content">' +
+                '<div class="event-header">' +
+                  '<div class="event-time">🕐 ' + timeStr + '</div>' +
+                  '<span class="event-category" style="background-color:' + cc + ';">' + h(ev.category || 'Other') + '</span>' +
+                '</div>' +
+                '<div class="event-name">' + h(ev.name) + '</div>' +
+                '<div class="event-meta">' +
+                  '<div class="event-meta-item">📍 ' + h(ev.venue || 'Venue TBA') + '</div>' +
+                  (ev.cost ? '<div class="event-meta-item">💷 ' + h(ev.cost) + '</div>' : '') +
+                '</div>' +
+                (desc ? '<div class="event-description">' + h(desc) + '</div>' : '') +
+                '<div class="event-actions">' +
+                  btn +
+                  '<button class="btn btn-secondary" onclick="addEventToCalendar(\'' + h(ev.id) + '\')">&#128197; Add to Calendar</button>' +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
         }
 
         function filterAndDisplayEvents() {
-          const filtered = events.filter(event => {
-            const eventDay = getDateKey(event.date);
-            const categoryMatch = selectedCategories.has(event.category);
-            const dayMatch = eventDay === selectedDay;
-            return categoryMatch && dayMatch;
-          });
-
-          const container = document.getElementById('eventsContainer');
-          if (filtered.length === 0) {
-            container.innerHTML = '<div class="no-events"><p>No events found for this day and category selection.</p></div>';
-          } else {
-            container.innerHTML = filtered.map(e => renderEventCard(e)).join('');
+          var container = document.getElementById('eventsContainer');
+          try {
+            var filtered = events.filter(function(ev) {
+              return selectedCategories[ev.category] && getDateKey(ev.date) === selectedDay;
+            });
+            if (filtered.length === 0) {
+              container.innerHTML = '<div class="no-events"><p>No events found for this day and category selection.</p></div>';
+            } else {
+              container.innerHTML = filtered.map(renderEventCard).join('');
+            }
+          } catch(err) {
+            container.innerHTML = '<div class="no-events"><p>Error loading events: ' + h(err.message) + '</p></div>';
+            console.error('filterAndDisplayEvents error:', err);
           }
         }
 
-        function addEventToCalendar(event) {
-          const startDate = new Date(event.date);
-          const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-
-          const ical = 'BEGIN:VCALENDAR\\nVERSION:2.0\\nPRODID:-//Bristol Events//EN\\nBEGIN:VEVENT\\nUID:' + event.id + '\\nDTSTART:' + startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\\nDTEND:' + endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\\nSUMMARY:' + event.name + '\\nDESCRIPTION:' + (event.description || '') + '\\nLOCATION:' + event.venue + '\\nEND:VEVENT\\nEND:VCALENDAR';
-
-          const link = document.createElement('a');
+        function addEventToCalendar(eventId) {
+          var ev = eventsById[eventId];
+          if (!ev) return;
+          var startDate = new Date(ev.date);
+          var endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+          var ical = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Bristol Events//EN\r\nBEGIN:VEVENT\r\n' +
+            'UID:' + ev.id + '\r\n' +
+            'DTSTART:' + startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\r\n' +
+            'DTEND:' + endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\r\n' +
+            'SUMMARY:' + (ev.name || '') + '\r\n' +
+            'DESCRIPTION:' + (ev.description || '') + '\r\n' +
+            'LOCATION:' + (ev.venue || '') + '\r\n' +
+            'END:VEVENT\r\nEND:VCALENDAR';
+          var link = document.createElement('a');
           link.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ical);
-          link.download = event.name + '.ics';
+          link.download = (ev.name || 'event') + '.ics';
           link.click();
         }
 
-        document.querySelectorAll('.day-btn').forEach(btn => {
+        document.querySelectorAll('.day-btn').forEach(function(btn) {
           btn.addEventListener('click', function() {
-            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.day-btn').forEach(function(b) { b.classList.remove('active'); });
             this.classList.add('active');
             selectedDay = this.dataset.date;
             filterAndDisplayEvents();
           });
         });
 
-        document.querySelectorAll('.category-btn').forEach(btn => {
+        document.querySelectorAll('.category-btn').forEach(function(btn) {
           btn.addEventListener('click', function() {
-            const category = this.dataset.category;
-            if (selectedCategories.has(category)) {
-              selectedCategories.delete(category);
+            var category = this.dataset.category;
+            if (selectedCategories[category]) {
+              delete selectedCategories[category];
               this.classList.remove('active');
             } else {
-              selectedCategories.add(category);
+              selectedCategories[category] = 1;
               this.classList.add('active');
             }
             filterAndDisplayEvents();
           });
         });
 
-        // Set today as active day on load
-        const today = new Date().toISOString().split('T')[0];
-        document.querySelector('[data-date="' + today + '"]')?.classList.add('active');
+        // Show today's events on load
+        var todayKey = new Date().toISOString().split('T')[0];
+        var todayBtn = document.querySelector('[data-date="' + todayKey + '"]');
+        if (todayBtn) { todayBtn.classList.add('active'); }
+        filterAndDisplayEvents();
     </script>
 </body>
 </html>
