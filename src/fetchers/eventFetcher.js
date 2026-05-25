@@ -2,84 +2,74 @@ const axios = require('axios');
 
 class EventFetcher {
   constructor() {
-    this.ticketmasterApiKey = process.env.TICKETMASTER_API_KEY;
+    this.skiddleApiKey = process.env.SKIDDLE_KEY;
     this.eventbriteApiKey = process.env.EVENTBRITE_API_KEY;
   }
 
-  async fetchTicketmasterEvents() {
-    if (!this.ticketmasterApiKey) {
-      console.log('Ticketmaster API key not configured, skipping...');
+  async fetchSkiddleEvents() {
+    if (!this.skiddleApiKey) {
+      console.log('Skiddle API key not configured, skipping...');
       return [];
     }
 
     try {
-      console.log('Fetching from Ticketmaster API...');
-      const response = await axios.get('https://app.ticketmaster.com/discovery/v2/events.json', {
+      console.log('Fetching from Skiddle API...');
+      const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(today.getDate() + 7);
+      const startDate = today.toISOString().split('T')[0];
+      const endDate = nextWeek.toISOString().split('T')[0];
+
+      const response = await axios.get('https://www.skiddle.com/api/v1/events/search/', {
         params: {
-          city: 'Bristol',
-          countryCode: 'GB',
-          apikey: this.ticketmasterApiKey,
-          size: 200
+          api_key: this.skiddleApiKey,
+          latitude: 51.4545,
+          longitude: -2.5879,
+          radius: 10,
+          order: 'date',
+          limit: 100,
+          startDate,
+          endDate
         }
       });
 
-      if (!response.data._embedded || !response.data._embedded.events) {
+      if (!response.data.results || response.data.results.length === 0) {
         return [];
       }
 
-      const rawEvents = response.data._embedded.events;
-
-      console.log(`Fetching individual details for ${rawEvents.length} Ticketmaster events...`);
-      const detailsMap = await this.fetchTicketmasterDetailsInBatches(rawEvents.map(e => e.id));
-
-      return rawEvents.map(event => ({
-        id: `ticketmaster-${event.id}`,
-        source: 'ticketmaster',
-        name: event.name,
-        description: event.description || event.info || '',
-        date: event.dates.start.dateTime || event.dates.start.localDate,
-        venue: event._embedded?.venues?.[0]?.name || 'Venue TBA',
-        cost: this.extractCost(event),
-        url: event.url,
-        image: event.images?.[0]?.url || null,
-        status: this.extractTicketmasterStatus(event, detailsMap.get(event.id))
+      return response.data.results.map(event => ({
+        id: `skiddle-${event.id}`,
+        source: 'skiddle',
+        name: event.heading,
+        description: event.description || '',
+        date: event.startdate + (event.doortime ? `T${event.doortime}:00` : ''),
+        venue: event.venue?.name || 'Venue TBA',
+        cost: this.extractSkiddleCost(event),
+        url: event.link,
+        image: event.largeimageurl || event.imageurl || null,
+        status: this.extractSkiddleStatus(event)
       }));
     } catch (error) {
-      console.error('Ticketmaster API error:', error.message);
+      console.error('Skiddle API error:', error.message);
       return [];
     }
   }
 
-  async fetchTicketmasterDetailsInBatches(eventIds) {
-    const BATCH_SIZE = 20;
-    const detailsMap = new Map();
-
-    for (let i = 0; i < eventIds.length; i += BATCH_SIZE) {
-      const batch = eventIds.slice(i, i + BATCH_SIZE);
-      const results = await Promise.all(batch.map(id => this.fetchTicketmasterEventDetail(id)));
-      results.forEach((detail, idx) => {
-        if (detail) detailsMap.set(batch[idx], detail);
-      });
-      if (i + BATCH_SIZE < eventIds.length) {
-        await new Promise(resolve => setTimeout(resolve, 250));
-      }
-    }
-
-    return detailsMap;
+  extractSkiddleCost(event) {
+    const min = parseFloat(event.MinPrice);
+    const max = parseFloat(event.MaxPrice);
+    if (isNaN(min) && isNaN(max)) return 'Price TBA';
+    if (min === 0 && (isNaN(max) || max === 0)) return 'Free';
+    if (!isNaN(min) && !isNaN(max) && min !== max) return `£${min} - £${max}`;
+    if (!isNaN(min)) return `£${min}`;
+    return 'Price TBA';
   }
 
-  async fetchTicketmasterEventDetail(eventId) {
-    try {
-      const response = await axios.get(
-        `https://app.ticketmaster.com/discovery/v2/events/${eventId}.json`,
-        { params: { apikey: this.ticketmasterApiKey } }
-      );
-      const d = response.data;
-      console.log(`[TM detail] "${d.name}" status=${d.dates?.status?.code} ticketLimit=${JSON.stringify(d.ticketLimit)} salesEnd=${d.sales?.public?.endDateTime}`);
-      return d;
-    } catch (error) {
-      return null;
-    }
+  extractSkiddleStatus(event) {
+    if (event.cancelled === '1') return 'cancelled';
+    if (event.soldout === '1') return 'sold_out';
+    if (event.ticketsAvailable === '0' && event.soldout !== '0') return 'off_sale';
+    return null;
   }
 
   async fetchEventbriteEvents() {
@@ -123,49 +113,16 @@ class EventFetcher {
     }
   }
 
-  extractTicketmasterStatus(event, details) {
-    // Check search-result status first (cancelled/postponed/rescheduled are reliable)
-    const searchCode = event.dates?.status?.code;
-    if (searchCode === 'cancelled') return 'cancelled';
-    if (searchCode === 'postponed') return 'postponed';
-    if (searchCode === 'rescheduled') return 'rescheduled';
-
-    if (details) {
-      const detailCode = details.dates?.status?.code;
-      if (detailCode === 'cancelled') return 'cancelled';
-      if (detailCode === 'postponed') return 'postponed';
-      if (detailCode === 'rescheduled') return 'rescheduled';
-      // offsale in individual detail = sale has ended (most likely sold out or withdrawn)
-      if (detailCode === 'offsale') return 'sold_out';
-
-      // Check ticketLimit.info text for explicit sold-out language
-      const limitInfo = (details.ticketLimit?.info || '').toLowerCase();
-      if (limitInfo.includes('sold out') || limitInfo.includes('sold-out')) return 'sold_out';
-    }
-
-    // offsale in search result only = off sale but not confirmed sold out
-    if (searchCode === 'offsale') return 'off_sale';
-    return null;
-  }
-
   extractEventbriteStatus(event) {
     if (event.status === 'canceled') return 'cancelled';
     if (event.ticket_availability?.is_sold_out) return 'sold_out';
     return null;
   }
 
-  extractCost(event) {
-    if (!event.priceRanges || event.priceRanges.length === 0) {
-      return 'Price TBA';
-    }
-    const price = event.priceRanges[0];
-    return `£${price.min} - £${price.max}`;
-  }
-
   async fetchAll() {
     const events = [];
 
-    events.push(...await this.fetchTicketmasterEvents());
+    events.push(...await this.fetchSkiddleEvents());
     events.push(...await this.fetchEventbriteEvents());
 
     return events;

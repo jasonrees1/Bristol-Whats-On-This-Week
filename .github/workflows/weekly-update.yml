@@ -27,7 +27,7 @@ jobs:
       - name: Fetch events and generate HTML
         run: npm run fetch-events
         env:
-          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          SKIDDLE_KEY: ${{ secrets.SKIDDLE_KEY }}
           EVENTBRITE_API_KEY: ${{ secrets.EVENTBRITE_API_KEY }}
 
       - name: Commit and push if changes
