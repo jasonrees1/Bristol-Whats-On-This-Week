@@ -7,239 +7,836 @@
     <title>What's On in Bristol This Week</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f5f5f5; }
-        header { background: #ff6b35; color: white; padding: 20px; text-align: center; }
-        h1 { font-size: 2em; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
-        .event { background: white; margin: 15px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .event-title { font-size: 1.3em; font-weight: bold; color: #333; }
-        .event-meta { color: #666; margin: 10px 0; font-size: 0.95em; }
-        .event-category { display: inline-block; background: #ff6b35; color: white; padding: 5px 10px; border-radius: 4px; font-size: 0.8em; margin: 5px 5px 5px 0; }
-        .event-description { color: #555; margin: 10px 0; line-height: 1.5; }
-        footer { background: #333; color: white; text-align: center; padding: 20px; margin-top: 40px; }
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: #f8f9fa;
+          color: #333;
+        }
+
+        header {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 30px 20px;
+          text-align: center;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 { font-size: 2.5em; margin-bottom: 5px; }
+        header p { font-size: 0.9em; opacity: 0.9; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+        /* Day Selector */
+        .day-selector {
+          display: flex;
+          gap: 10px;
+          margin: 30px 0;
+          flex-wrap: wrap;
+          padding: 20px;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
+
+        .day-btn {
+          padding: 12px 20px;
+          border: 2px solid #ddd;
+          background: white;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 1em;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          min-width: 100px;
+          text-align: center;
+        }
+
+        .day-btn:hover { border-color: #667eea; color: #667eea; }
+        .day-btn.active {
+          background: #667eea;
+          color: white;
+          border-color: #667eea;
+        }
+        .day-btn.today {
+          border-color: #ff6b6b;
+        }
+        .day-badge {
+          display: inline-block;
+          background: #ff6b6b;
+          color: white;
+          padding: 2px 8px;
+          border-radius: 4px;
+          font-size: 0.7em;
+          margin-left: 5px;
+        }
+
+        /* Category Filters */
+        .category-filters {
+          background: white;
+          padding: 20px;
+          border-radius: 12px;
+          margin-bottom: 30px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .filter-row {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 10px;
+        }
+
+        .filter-row:last-child { margin-bottom: 0; }
+
+        .category-btn {
+          padding: 10px 16px;
+          border: 2px solid #ddd;
+          background: white;
+          border-radius: 20px;
+          cursor: pointer;
+          font-size: 0.9em;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          white-space: nowrap;
+        }
+
+        .category-btn:hover { transform: translateY(-2px); }
+        .category-btn.active {
+          color: white;
+          border-color: transparent;
+        }
+
+        /* Events Grid */
+        .events-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+          gap: 20px;
+          margin: 30px 0;
+        }
+
+        .event-card {
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          transition: all 0.3s ease;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .event-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .event-image {
+          width: 100%;
+          height: 200px;
+          object-fit: cover;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .event-content {
+          padding: 20px;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .event-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 10px;
+        }
+
+        .event-time {
+          font-size: 0.85em;
+          font-weight: 600;
+          color: #667eea;
+        }
+
+        .event-category {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.75em;
+          font-weight: 600;
+          color: white;
+          margin-left: auto;
+        }
+
+        .event-name {
+          font-size: 1.3em;
+          font-weight: bold;
+          color: #333;
+          margin: 10px 0;
+          line-height: 1.3;
+        }
+
+        .event-meta {
+          color: #666;
+          font-size: 0.9em;
+          margin: 8px 0;
+          line-height: 1.5;
+        }
+
+        .event-meta-item {
+          display: flex;
+          align-items: center;
+          margin-bottom: 5px;
+        }
+
+        .event-meta-item:last-child { margin-bottom: 0; }
+
+        .event-description {
+          color: #555;
+          font-size: 0.9em;
+          margin: 12px 0;
+          flex: 1;
+          line-height: 1.5;
+        }
+
+        .event-actions {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+          padding-top: 15px;
+          border-top: 1px solid #eee;
+        }
+
+        .btn {
+          flex: 1;
+          padding: 10px 15px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.9em;
+          font-weight: 600;
+          transition: all 0.3s ease;
+          text-decoration: none;
+          text-align: center;
+          display: inline-block;
+        }
+
+        .btn-primary {
+          background: #667eea;
+          color: white;
+        }
+        .btn-primary:hover { background: #5568d3; }
+
+        .btn-secondary {
+          background: #f0f0f0;
+          color: #333;
+          border: 1px solid #ddd;
+        }
+        .btn-secondary:hover { background: #e8e8e8; }
+
+        .no-events {
+          text-align: center;
+          padding: 40px 20px;
+          background: white;
+          border-radius: 12px;
+          color: #999;
+        }
+
+        .no-events p { font-size: 1.1em; margin-bottom: 10px; }
+
+        footer {
+          background: #2c3e50;
+          color: white;
+          text-align: center;
+          padding: 20px;
+          margin-top: 40px;
+          font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+          header h1 { font-size: 1.8em; }
+          .day-selector { gap: 8px; }
+          .day-btn { min-width: 80px; padding: 10px 15px; font-size: 0.9em; }
+          .events-grid {
+            grid-template-columns: 1fr;
+          }
+          .event-actions {
+            flex-direction: column;
+          }
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>🎭 What's On in Bristol This Week</h1>
-        <p>Updated: 5/24/2026</p>
+        <p>Last updated: Monday 25 May 2026</p>
     </header>
 
     <div class="container">
-        
-        
-      <div class="event">
-          <div class="event-title">ShxtsNGigs: Daddy's Home Tour</div>
-          <div class="event-meta">
-              📍 Bristol Beacon | 🕐 2026-05-24T18:00:00Z
-              | 💷 Price TBA
-          </div>
-          <div><span class="event-category">Theater</span></div>
-          <div class="event-description">Doors Time - 19:00 Show Time - 20:00 Curfew Time - 23:00</div>
-      </div>
-    
-      <div class="event">
-          <div class="event-title">Tinariwen</div>
-          <div class="event-meta">
-              📍 Electric Bristol | 🕐 2026-05-24T18:00:00Z
-              | 💷 Price TBA
-          </div>
-          <div><span class="event-category">Other</span></div>
-          <div class="event-description">Bristol Beacon Presents 
-Tinariwen </div>
-      </div>
-    
-      <div class="event">
-          <div class="event-title">Lily Moore</div>
-          <div class="event-meta">
-              📍 Exchange Bristol | 🕐 2026-05-25T18:00:00Z
-              | 💷 Price TBA
-          </div>
-          <div><span class="event-category">Other</span></div>
+        <!-- Day Selector -->
+        <div class="day-selector" id="daySelector">
+            
+        <button class="day-btn today" data-date="2026-05-25">
+          Mon, 25 May
+          <span class="day-badge">Today</span>
+        </button>
+      
+        <button class="day-btn " data-date="2026-05-26">
+          Tue, 26 May
           
+        </button>
+      
+        <button class="day-btn " data-date="2026-05-27">
+          Wed, 27 May
+          
+        </button>
+      
+        <button class="day-btn " data-date="2026-05-28">
+          Thu, 28 May
+          
+        </button>
+      
+        <button class="day-btn " data-date="2026-05-29">
+          Fri, 29 May
+          
+        </button>
+      
+        <button class="day-btn " data-date="2026-05-30">
+          Sat, 30 May
+          
+        </button>
+      
+        <button class="day-btn " data-date="2026-05-31">
+          Sun, 31 May
+          
+        </button>
+      
+        </div>
+
+        <!-- Category Filters -->
+        <div class="category-filters">
+          <div class="filter-row">
+            
+      <button class="category-btn active" data-category="Concert" style="border-color: #1E90FF; color: #1E90FF;">
+        Concert
+      </button>
+    
+      <button class="category-btn active" data-category="Food" style="border-color: #E67E22; color: #E67E22;">
+        Food
+      </button>
+    
+      <button class="category-btn active" data-category="Sports" style="border-color: #2ECC71; color: #2ECC71;">
+        Sports
+      </button>
+    
+      <button class="category-btn active" data-category="Theater" style="border-color: #9B59B6; color: #9B59B6;">
+        Theater
+      </button>
+    
+      <button class="category-btn active" data-category="Art" style="border-color: #E74C3C; color: #E74C3C;">
+        Art
+      </button>
+    
+          </div>
+          <div class="filter-row">
+            
+      <button class="category-btn active" data-category="Festival" style="border-color: #FF69B4; color: #FF69B4;">
+        Festival
+      </button>
+    
+      <button class="category-btn active" data-category="Family" style="border-color: #FF69B4; color: #FF69B4;">
+        Family
+      </button>
+    
+      <button class="category-btn active" data-category="Nightlife" style="border-color: #2C3E50; color: #2C3E50;">
+        Nightlife
+      </button>
+    
+      <button class="category-btn active" data-category="Conference" style="border-color: #95A5A6; color: #95A5A6;">
+        Conference
+      </button>
+    
+      <button class="category-btn active" data-category="Tour" style="border-color: #A0826D; color: #A0826D;">
+        Tour
+      </button>
+    
+      <button class="category-btn active" data-category="Market" style="border-color: #F39C12; color: #F39C12;">
+        Market
+      </button>
+    
+      <button class="category-btn active" data-category="Other" style="border-color: #7F8C8D; color: #7F8C8D;">
+        Other
+      </button>
+    
+          </div>
+        </div>
+
+        <!-- Events Display -->
+        <div id="eventsContainer">
+            
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/323/56832e51-76d7-4315-871b-5ad814013323_TABLET_LANDSCAPE_3_2.jpg" alt="Lily Moore" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
+          </div>
+          <div class="event-name">Lily Moore</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Exchange Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
+          
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/lily-moore-bristol-25-05-2026/event/1F00642C07F84CF5" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5vHZ_eY6X7Sg&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Lily Moore&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-25T18:00:00Z&quot;,&quot;venue&quot;:&quot;Exchange Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/lily-moore-bristol-25-05-2026/event/1F00642C07F84CF5&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/323/56832e51-76d7-4315-871b-5ad814013323_TABLET_LANDSCAPE_3_2.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">fakemink: a Terrible Beauty . - The Tour</div>
-          <div class="event-meta">
-              📍 Electric Bristol | 🕐 2026-05-25T18:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/979/7f842d94-48ac-47cb-bc6c-a6f81b9c8979_RETINA_LANDSCAPE_16_9.jpg" alt="fakemink: a Terrible Beauty . - The Tour" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #A0826D;">Tour</span>
           </div>
-          <div><span class="event-category">Tour</span></div>
+          <div class="event-name">fakemink: a Terrible Beauty . - The Tour</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Electric Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           <div class="event-description">AEG Presents 
  fakemink: a Terrible Beauty . - The Tour  </div>
+          <div class="event-actions">
+            <a href="https://www.universe.com/events/fakemink-a-terrible-beauty-the-tour-tickets-P49HSC?ref=ticketmaster" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-LvZ18Q_3I4rvti8ZlIH-w&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;fakemink: a Terrible Beauty . - The Tour&quot;,&quot;description&quot;:&quot;AEG Presents \n fakemink: a Terrible Beauty . - The Tour  &quot;,&quot;date&quot;:&quot;2026-05-25T18:00:00Z&quot;,&quot;venue&quot;:&quot;Electric Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.universe.com/events/fakemink-a-terrible-beauty-the-tour-tickets-P49HSC?ref=ticketmaster&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/979/7f842d94-48ac-47cb-bc6c-a6f81b9c8979_RETINA_LANDSCAPE_16_9.jpg&quot;,&quot;category&quot;:&quot;Tour&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Sir Chloe</div>
-          <div class="event-meta">
-              📍 Trinity Arts Centre | 🕐 2026-05-26T18:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/19b/6be29459-4cc6-4440-ac46-6ff536cac19b_RECOMENDATION_16_9.jpg" alt="Sir Chloe" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">Sir Chloe</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Trinity Arts Centre</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/sir-chloe-bristol-26-05-2026/event/3700643BE3EB3525" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-1AdjZ_dGkRNBSfP&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Sir Chloe&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-26T18:00:00Z&quot;,&quot;venue&quot;:&quot;Trinity Arts Centre&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/sir-chloe-bristol-26-05-2026/event/3700643BE3EB3525&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/19b/6be29459-4cc6-4440-ac46-6ff536cac19b_RECOMENDATION_16_9.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">James Morrison</div>
-          <div class="event-meta">
-              📍 Bristol Beacon | 🕐 2026-05-26T18:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/1f4/319cba7c-0cd3-43a0-9c06-a352ce2741f4_CUSTOM.jpg" alt="James Morrison" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">James Morrison</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Bristol Beacon</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/james-morrison-bristol-26-05-2026/event/3700636AC08D607D" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-1AdjZbUGklZNpvW&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;James Morrison&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-26T18:00:00Z&quot;,&quot;venue&quot;:&quot;Bristol Beacon&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/james-morrison-bristol-26-05-2026/event/3700636AC08D607D&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/1f4/319cba7c-0cd3-43a0-9c06-a352ce2741f4_CUSTOM.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Skipinnish</div>
-          <div class="event-meta">
-              📍 St George's Bristol | 🕐 2026-05-26T18:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/996/fa65f824-5f61-4a54-9ef1-49e0b9888996_SOURCE" alt="Skipinnish" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">Skipinnish</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 St George's Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/skipinnish-bristol-26-05-2026/event/1F00644CBB123AA9" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5vHZ_7wD7Nnt&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Skipinnish&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-26T18:00:00Z&quot;,&quot;venue&quot;:&quot;St George's Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/skipinnish-bristol-26-05-2026/event/1F00644CBB123AA9&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/996/fa65f824-5f61-4a54-9ef1-49e0b9888996_SOURCE&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Sarah Kinsley</div>
-          <div class="event-meta">
-              📍 The Fleece | 🕐 2026-05-26T18:30:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/754/f2535e66-a672-4539-b7a0-f88aaed78754_EVENT_DETAIL_PAGE_16_9.jpg" alt="Sarah Kinsley" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:30</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">Sarah Kinsley</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 The Fleece</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/sarah-kinsley-bristol-26-05-2026/event/1F00637A4328D8F2" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5vHZbMtd1uNw&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Sarah Kinsley&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-26T18:30:00Z&quot;,&quot;venue&quot;:&quot;The Fleece&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/sarah-kinsley-bristol-26-05-2026/event/1F00637A4328D8F2&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/754/f2535e66-a672-4539-b7a0-f88aaed78754_EVENT_DETAIL_PAGE_16_9.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Girl In The Year Above</div>
-          <div class="event-meta">
-              📍 The Louisiana | 🕐 2026-05-26T18:30:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/3a8/c3daaf64-a26e-464d-bdfd-9f91e55003a8_ARTIST_PAGE_3_2.jpg" alt="Girl In The Year Above" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:30</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">Girl In The Year Above</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 The Louisiana</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/girl-in-the-year-above-bristol-26-05-2026/event/1F006458472AA33E" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5vHZ_A-61nGX&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Girl In The Year Above&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-26T18:30:00Z&quot;,&quot;venue&quot;:&quot;The Louisiana&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/girl-in-the-year-above-bristol-26-05-2026/event/1F006458472AA33E&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/3a8/c3daaf64-a26e-464d-bdfd-9f91e55003a8_ARTIST_PAGE_3_2.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">MARINA - The Princess of Power Tour</div>
-          <div class="event-meta">
-              📍 Bristol Beacon | 🕐 2026-05-27T18:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/dab/c0f9c8b1-0b82-44b6-a243-1324257c6dab_RETINA_LANDSCAPE_16_9.jpg" alt="MARINA - The Princess of Power Tour" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #A0826D;">Tour</span>
           </div>
-          <div><span class="event-category">Tour</span></div>
+          <div class="event-name">MARINA - The Princess of Power Tour</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Bristol Beacon</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/marina-the-princess-of-power-tour-bristol-27-05-2026/event/37006358F859DD62" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-1AMZkubGkdzpqgx&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;MARINA - The Princess of Power Tour&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-27T18:00:00Z&quot;,&quot;venue&quot;:&quot;Bristol Beacon&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/marina-the-princess-of-power-tour-bristol-27-05-2026/event/37006358F859DD62&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/dab/c0f9c8b1-0b82-44b6-a243-1324257c6dab_RETINA_LANDSCAPE_16_9.jpg&quot;,&quot;category&quot;:&quot;Tour&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Ruby Roberts</div>
-          <div class="event-meta">
-              📍 Rough Trade Bristol | 🕐 2026-05-27T18:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/a6b/749592a0-1d0e-4f43-9500-d1b79218ca6b_TABLET_LANDSCAPE_LARGE_16_9.jpg" alt="Ruby Roberts" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">Ruby Roberts</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Rough Trade Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/ruby-roberts-bristol-27-05-2026/event/1F00646ABA94357A" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5vHZ_knBPd4B&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Ruby Roberts&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-27T18:00:00Z&quot;,&quot;venue&quot;:&quot;Rough Trade Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/ruby-roberts-bristol-27-05-2026/event/1F00646ABA94357A&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/a6b/749592a0-1d0e-4f43-9500-d1b79218ca6b_TABLET_LANDSCAPE_LARGE_16_9.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Finn Forster</div>
-          <div class="event-meta">
-              📍 Exchange Bristol | 🕐 2026-05-27T18:30:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/619/12a4b43d-856f-4ace-a26e-48ae3545e619_TABLET_LANDSCAPE_16_9.jpg" alt="Finn Forster" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:30</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">Finn Forster</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Exchange Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketweb.uk/event/finn-forster-exchange-bristol-tickets/14625813?REFERRAL_ID=tmfeed" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-1AwZku8GkeIteA6&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Finn Forster&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-27T18:30:00Z&quot;,&quot;venue&quot;:&quot;Exchange Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketweb.uk/event/finn-forster-exchange-bristol-tickets/14625813?REFERRAL_ID=tmfeed&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/619/12a4b43d-856f-4ace-a26e-48ae3545e619_TABLET_LANDSCAPE_16_9.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">England Women V India (Cricket)</div>
-          <div class="event-meta">
-              📍 Seat Unique Stadium | 🕐 2026-05-30T13:30:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/c/bc3/8490d3ca-7bb6-4662-ab7c-acc9f5d97bc3_106051_TABLET_LANDSCAPE_16_9.jpg" alt="England Women V India (Cricket)" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 13:30</div>
+            <span class="event-category" style="background-color: #2ECC71;">Sports</span>
           </div>
-          <div><span class="event-category">Sports</span></div>
+          <div class="event-name">England Women V India (Cricket)</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Seat Unique Stadium</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.eticketing.co.uk/glosccc/EDP/Event/Index/1346?utm_source=Ticketmaster&utm_medium=Shell-Event&utm_campaign=cl:Gloucestershire-CC-chl:Shell-Event-v.EN" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-16dfZbgfeG7mhxb&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;England Women V India (Cricket)&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-30T13:30:00Z&quot;,&quot;venue&quot;:&quot;Seat Unique Stadium&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.eticketing.co.uk/glosccc/EDP/Event/Index/1346?utm_source=Ticketmaster&utm_medium=Shell-Event&utm_campaign=cl:Gloucestershire-CC-chl:Shell-Event-v.EN&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/c/bc3/8490d3ca-7bb6-4662-ab7c-acc9f5d97bc3_106051_TABLET_LANDSCAPE_16_9.jpg&quot;,&quot;category&quot;:&quot;Sports&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Day Fever</div>
-          <div class="event-meta">
-              📍 O2 Academy Bristol | 🕐 2026-05-30T14:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/2ce/4bcaf37f-d4e2-41b2-9041-0cdc6d3a42ce_RECOMENDATION_16_9.jpg" alt="Day Fever" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 14:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
-          <div class="event-description">Security - Bag Policy: Large bags including rucksacks are not allowed. There are no facilities to leave large bags or luggage. If you really have to bring a bag - and it's preferable you don't, please make sure it's small. Only one small bag per person is permitted and it must not be bigger than A4 size. Height: 28.7cm Width: 21cm Depth 15cm</div>
+          <div class="event-name">Day Fever</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 O2 Academy Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
+          <div class="event-description">Security - Bag Policy: Large bags including rucksacks are not allowed. There are no facilities to leave large bags or luggage. If you really have to b...</div>
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/day-fever-bristol-30-05-2026/event/3E006470C41C4D47" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5dzZ_6d767g6&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Day Fever&quot;,&quot;description&quot;:&quot;Security - Bag Policy: Large bags including rucksacks are not allowed. There are no facilities to leave large bags or luggage. If you really have to bring a bag - and it's preferable you don't, please make sure it's small. Only one small bag per person is permitted and it must not be bigger than A4 size. Height: 28.7cm Width: 21cm Depth 15cm&quot;,&quot;date&quot;:&quot;2026-05-30T14:00:00Z&quot;,&quot;venue&quot;:&quot;O2 Academy Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/day-fever-bristol-30-05-2026/event/3E006470C41C4D47&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/2ce/4bcaf37f-d4e2-41b2-9041-0cdc6d3a42ce_RECOMENDATION_16_9.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Day Fever - Bristol</div>
-          <div class="event-meta">
-              📍 O2 Academy Bristol | 🕐 2026-05-30T14:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/2ce/4bcaf37f-d4e2-41b2-9041-0cdc6d3a42ce_RECOMENDATION_16_9.jpg" alt="Day Fever - Bristol" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 14:00</div>
+            <span class="event-category" style="background-color: #9B59B6;">Theater</span>
           </div>
-          <div><span class="event-category">Theater</span></div>
+          <div class="event-name">Day Fever - Bristol</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 O2 Academy Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           <div class="event-description"> DAY FEVER HAS TAKEN OVER THE COUNTRY!
 
-The day-time clubbing event started by Vicky McClure, Jonny Owen and Reverend &amp; The Makers has swept the UK since it’s launch in 2024
-‘The day-time disco that doesn’t ruin your Sunday’ has amassed a huge following with thousands of punters packing out clubs and theatres every weekend to dance the day away from. A whole generation who perhaps thought their clubbing days were behind them are blazing a trail for a new way to enjoy themselves.
-Day Fever prides itself on creating a safe-space where people can just be themselves. No dress code, no egos, just enjoyment and positivity. This has seen a loyal fanbase leading to sold out shows in some of the countries most famous venues.
-
-The music policy is simple, the greatest hits of the 20th century. Why can’t Madonna sit next to Madness? Pulp go back to back with Prince? The Stone Roses and The Rolling Stones?
-90’s dance classics versus a spot of Motown? Why choose when you can enjoy it all?
-Vicky McClure says ‘Travelling up and down the country and seeing so many people enjoying themselves has been such a joy, we’re just so happy that people feel comfortable at Day Fever and meeting and hearing everyone’s stories has made us realise how important it is for us all to take some time out of life and just have a bloody good dance!’
-Follow DAY FEVER on Facebook, Instagram, TikTok and X - @DAYFEVERUK
-
-OVER 18S ONLY/ID REQ, NO BAGS BIGGER THAN A4 SIZE</div>
+The day-time clubbing event started by Vicky McClure, Jonny Owen and Reverend &amp; The Makers has swept the U...</div>
+          <div class="event-actions">
+            <a href="https://www.universe.com/events/day-fever-bristol-tickets-KJXY6M?ref=ticketmaster" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-LvZ18QhA56YgPb8ZiKlj-&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Day Fever - Bristol&quot;,&quot;description&quot;:&quot; DAY FEVER HAS TAKEN OVER THE COUNTRY!\n\nThe day-time clubbing event started by Vicky McClure, Jonny Owen and Reverend &amp; The Makers has swept the UK since it’s launch in 2024\n‘The day-time disco that doesn’t ruin your Sunday’ has amassed a huge following with thousands of punters packing out clubs and theatres every weekend to dance the day away from. A whole generation who perhaps thought their clubbing days were behind them are blazing a trail for a new way to enjoy themselves.\nDay Fever prides itself on creating a safe-space where people can just be themselves. No dress code, no egos, just enjoyment and positivity. This has seen a loyal fanbase leading to sold out shows in some of the countries most famous venues.\n\nThe music policy is simple, the greatest hits of the 20th century. Why can’t Madonna sit next to Madness? Pulp go back to back with Prince? The Stone Roses and The Rolling Stones?\n90’s dance classics versus a spot of Motown? Why choose when you can enjoy it all?\nVicky McClure says ‘Travelling up and down the country and seeing so many people enjoying themselves has been such a joy, we’re just so happy that people feel comfortable at Day Fever and meeting and hearing everyone’s stories has made us realise how important it is for us all to take some time out of life and just have a bloody good dance!’\nFollow DAY FEVER on Facebook, Instagram, TikTok and X - @DAYFEVERUK\n\nOVER 18S ONLY/ID REQ, NO BAGS BIGGER THAN A4 SIZE&quot;,&quot;date&quot;:&quot;2026-05-30T14:00:00Z&quot;,&quot;venue&quot;:&quot;O2 Academy Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.universe.com/events/day-fever-bristol-tickets-KJXY6M?ref=ticketmaster&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/2ce/4bcaf37f-d4e2-41b2-9041-0cdc6d3a42ce_RECOMENDATION_16_9.jpg&quot;,&quot;category&quot;:&quot;Theater&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">SUGAR - Love You Even Still 2026 World Tour</div>
-          <div class="event-meta">
-              📍 Electric Bristol | 🕐 2026-05-30T17:30:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/310/3a20aa39-abd3-4873-b146-7a7c2a311310_CUSTOM.jpg" alt="SUGAR - Love You Even Still 2026 World Tour" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 17:30</div>
+            <span class="event-category" style="background-color: #E74C3C;">Art</span>
           </div>
-          <div><span class="event-category">Art</span></div>
-          <div class="event-description">SUGAR has partnered with PLUS1 so that £2 from every ticket sold goes to supporting AKT and their work providing support for LGBTQ+ young people who are experiencing homelessness; and the Amy Winehouse Foundation and their work helping young people to make informed choices about drugs and alcohol. https://www.akt.org.uk/about/ https://amywinehousefoundation.org/</div>
+          <div class="event-name">SUGAR - Love You Even Still 2026 World Tour</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Electric Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
+          <div class="event-description">SUGAR has partnered with PLUS1 so that £2 from every ticket sold goes to supporting AKT and their work providing support for LGBTQ+ young people who a...</div>
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/sugar-love-you-even-still-2026-bristol-30-05-2026/event/1F006437E13A5A01" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5vHZ_dL-CPIv&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;SUGAR - Love You Even Still 2026 World Tour&quot;,&quot;description&quot;:&quot;SUGAR has partnered with PLUS1 so that £2 from every ticket sold goes to supporting AKT and their work providing support for LGBTQ+ young people who are experiencing homelessness; and the Amy Winehouse Foundation and their work helping young people to make informed choices about drugs and alcohol. https://www.akt.org.uk/about/ https://amywinehousefoundation.org/&quot;,&quot;date&quot;:&quot;2026-05-30T17:30:00Z&quot;,&quot;venue&quot;:&quot;Electric Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/sugar-love-you-even-still-2026-bristol-30-05-2026/event/1F006437E13A5A01&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/310/3a20aa39-abd3-4873-b146-7a7c2a311310_CUSTOM.jpg&quot;,&quot;category&quot;:&quot;Art&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">SUGAR</div>
-          <div class="event-meta">
-              📍 Electric Bristol | 🕐 2026-05-30T17:30:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/ab5/5fadb9e7-a0d2-4f6c-afba-057af3866ab5_RETINA_PORTRAIT_16_9.jpg" alt="SUGAR" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 17:30</div>
+            <span class="event-category" style="background-color: #E74C3C;">Art</span>
           </div>
-          <div><span class="event-category">Art</span></div>
+          <div class="event-name">SUGAR</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Electric Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           <div class="event-description">DHP Presents
 SUGAR 
 Love You Even Still 2026 World Tour 
 
-SUGAR has partnered with PLUS1 so that €2/£2 from every ticket sold will go to organizations working to support and empower the health and wellbeing of LGBTQ+ communities. www.plus1.org </div>
-      </div>
-    
-      <div class="event">
-          <div class="event-title">The Longest Johns</div>
-          <div class="event-meta">
-              📍 Bristol Beacon | 🕐 2026-05-30T18:00:00Z
-              | 💷 Price TBA
+SUGAR has partnered with PLUS1 so that €2/£2 from every ticket sold will go to organizations...</div>
+          <div class="event-actions">
+            <a href="https://www.universe.com/events/sugar-tickets-6M8D75?ref=ticketmaster" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-LvZ18QpyaQOwXDYZwPj53&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;SUGAR&quot;,&quot;description&quot;:&quot;DHP Presents\nSUGAR \nLove You Even Still 2026 World Tour \n\nSUGAR has partnered with PLUS1 so that €2/£2 from every ticket sold will go to organizations working to support and empower the health and wellbeing of LGBTQ+ communities. www.plus1.org &quot;,&quot;date&quot;:&quot;2026-05-30T17:30:00Z&quot;,&quot;venue&quot;:&quot;Electric Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.universe.com/events/sugar-tickets-6M8D75?ref=ticketmaster&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/ab5/5fadb9e7-a0d2-4f6c-afba-057af3866ab5_RETINA_PORTRAIT_16_9.jpg&quot;,&quot;category&quot;:&quot;Art&quot;})">📅 Add to Calendar</button>
           </div>
-          <div><span class="event-category">Other</span></div>
-          
+        </div>
       </div>
     
-      <div class="event">
-          <div class="event-title">Islandman</div>
-          <div class="event-meta">
-              📍 Bristol Strange Brew | 🕐 2026-05-30T18:00:00Z
-              | 💷 Price TBA
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/c0c/4f2de467-9ccf-4444-ab62-c54f8787bc0c_ARTIST_PAGE_3_2.jpg" alt="The Longest Johns" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
           </div>
-          <div><span class="event-category">Other</span></div>
+          <div class="event-name">The Longest Johns</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Bristol Beacon</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
           
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/the-longest-johns-bristol-30-05-2026/event/37006383B122B030" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-1AMZkCdGkesFlZY&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;The Longest Johns&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-30T18:00:00Z&quot;,&quot;venue&quot;:&quot;Bristol Beacon&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/the-longest-johns-bristol-30-05-2026/event/37006383B122B030&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/c0c/4f2de467-9ccf-4444-ab62-c54f8787bc0c_ARTIST_PAGE_3_2.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
       </div>
     
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/c/df8/81eadad8-4449-412e-a2b1-3d8bbb78edf8_106181_RECOMENDATION_16_9.jpg" alt="Islandman" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
+          </div>
+          <div class="event-name">Islandman</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Bristol Strange Brew</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
+          
+          <div class="event-actions">
+            <a href="https://www.ticketweb.uk/event/islandman-strange-brew-tickets/14496253?REFERRAL_ID=tmfeed" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-17GOvxG65hWC3yd&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;Islandman&quot;,&quot;description&quot;:&quot;&quot;,&quot;date&quot;:&quot;2026-05-30T18:00:00Z&quot;,&quot;venue&quot;:&quot;Bristol Strange Brew&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketweb.uk/event/islandman-strange-brew-tickets/14496253?REFERRAL_ID=tmfeed&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/c/df8/81eadad8-4449-412e-a2b1-3d8bbb78edf8_106181_RECOMENDATION_16_9.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
+      </div>
+    
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/f4d/fa3d5ddd-0b97-4068-bf24-5ffe4378df4d_TABLET_LANDSCAPE_3_2.jpg" alt="BAFTA Games In Concert" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 17:30</div>
+            <span class="event-category" style="background-color: #1E90FF;">Concert</span>
+          </div>
+          <div class="event-name">BAFTA Games In Concert</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 Bristol Beacon</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
+          <div class="event-description">BAFTA Games in Concert Join the full forces of a 65-piece orchestra in the official performance of nominated and award-winning music from 20 years of ...</div>
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/bafta-games-in-concert-bristol-31-05-2026/event/3700636AF1438B99" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-1AdjZbUGkls8zm_&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;BAFTA Games In Concert&quot;,&quot;description&quot;:&quot;BAFTA Games in Concert Join the full forces of a 65-piece orchestra in the official performance of nominated and award-winning music from 20 years of the BAFTA Games Awards, synchronised live with dynamic visuals, gameplay and imagery on screen. Celebrating the outstanding composers behind the music, this concert features exclusive suites from iconic games soundtracks, spanning household names to pioneering independent studios including: Everybody's Gone to the Rapture by Jessica Curry Baldur's Gate 3 by Borislav Slavov Hitman: Contracts by Jesper Kyd Tomb Raider: Legend by Troels Brun Folmann Assassin's Creed by Jesper Kyd Cuphead by Kris Maddigan Journey by Austin Wintory Helldivers 2 by Wilbert Roget, II Fallout 4 by Inon Zur Disco Elysium by Sea Power Ori and the Will of the Wisps by Gareth Coker Returnal by Bobby Krlic Uncharted 2: Among Thieves by Greg Edmonson Far Cry 4 by Cliff Martinez Virginia by Lyndon Holland&quot;,&quot;date&quot;:&quot;2026-05-31T17:30:00Z&quot;,&quot;venue&quot;:&quot;Bristol Beacon&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/bafta-games-in-concert-bristol-31-05-2026/event/3700636AF1438B99&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/f4d/fa3d5ddd-0b97-4068-bf24-5ffe4378df4d_TABLET_LANDSCAPE_3_2.jpg&quot;,&quot;category&quot;:&quot;Concert&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
+      </div>
+    
+      <div class="event-card">
+        <img src="https://s1.ticketm.net/dam/a/307/f8c978f5-20a8-4da2-808b-ef507d420307_CUSTOM.jpg" alt="My Leonard Cohen" class="event-image">
+        <div class="event-content">
+          <div class="event-header">
+            <div class="event-time">🕐 18:00</div>
+            <span class="event-category" style="background-color: #7F8C8D;">Other</span>
+          </div>
+          <div class="event-name">My Leonard Cohen</div>
+          <div class="event-meta">
+            <div class="event-meta-item">📍 O2 Academy Bristol</div>
+            <div class="event-meta-item">💷 Price TBA</div>
+          </div>
+          <div class="event-description">Limited unreserved Seating available, first come first served. Security - Bag Policy: Large bags including rucksacks are not allowed. There are no fac...</div>
+          <div class="event-actions">
+            <a href="https://www.ticketmaster.co.uk/my-leonard-cohen-bristol-31-05-2026/event/3E0062A9EE971646" target="_blank" class="btn btn-primary">Learn More</a>
+            <button class="btn btn-secondary" onclick="addEventToCalendar({&quot;id&quot;:&quot;ticketmaster-G5dzZbnEmPs_k&quot;,&quot;source&quot;:&quot;ticketmaster&quot;,&quot;name&quot;:&quot;My Leonard Cohen&quot;,&quot;description&quot;:&quot;Limited unreserved Seating available, first come first served. Security - Bag Policy: Large bags including rucksacks are not allowed. There are no facilities to leave large bags or luggage. If you really have to bring a bag - and it's preferable you don't, please make sure it's small. Only one small bag per person is permitted and it must not be bigger than A4 size. Height: 28.7cm Width: 21cm Depth: 15cm&quot;,&quot;date&quot;:&quot;2026-05-31T18:00:00Z&quot;,&quot;venue&quot;:&quot;O2 Academy Bristol&quot;,&quot;cost&quot;:&quot;Price TBA&quot;,&quot;url&quot;:&quot;https://www.ticketmaster.co.uk/my-leonard-cohen-bristol-31-05-2026/event/3E0062A9EE971646&quot;,&quot;image&quot;:&quot;https://s1.ticketm.net/dam/a/307/f8c978f5-20a8-4da2-808b-ef507d420307_CUSTOM.jpg&quot;,&quot;category&quot;:&quot;Other&quot;})">📅 Add to Calendar</button>
+          </div>
+        </div>
+      </div>
+    
+        </div>
     </div>
 
     <footer>
-        <p>Bristol What's On - Updated Weekly</p>
+        <p>Bristol What's On - Updated every Saturday at 10 AM UTC</p>
     </footer>
+
+    <script>
+        const events = [{"id":"ticketmaster-G5vHZ_eY6X7Sg","source":"ticketmaster","name":"Lily Moore","description":"","date":"2026-05-25T18:00:00Z","venue":"Exchange Bristol","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/lily-moore-bristol-25-05-2026/event/1F00642C07F84CF5","image":"https://s1.ticketm.net/dam/a/323/56832e51-76d7-4315-871b-5ad814013323_TABLET_LANDSCAPE_3_2.jpg","category":"Other"},{"id":"ticketmaster-LvZ18Q_3I4rvti8ZlIH-w","source":"ticketmaster","name":"fakemink: a Terrible Beauty . - The Tour","description":"AEG Presents \n fakemink: a Terrible Beauty . - The Tour  ","date":"2026-05-25T18:00:00Z","venue":"Electric Bristol","cost":"Price TBA","url":"https://www.universe.com/events/fakemink-a-terrible-beauty-the-tour-tickets-P49HSC?ref=ticketmaster","image":"https://s1.ticketm.net/dam/a/979/7f842d94-48ac-47cb-bc6c-a6f81b9c8979_RETINA_LANDSCAPE_16_9.jpg","category":"Tour"},{"id":"ticketmaster-1AdjZ_dGkRNBSfP","source":"ticketmaster","name":"Sir Chloe","description":"","date":"2026-05-26T18:00:00Z","venue":"Trinity Arts Centre","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/sir-chloe-bristol-26-05-2026/event/3700643BE3EB3525","image":"https://s1.ticketm.net/dam/a/19b/6be29459-4cc6-4440-ac46-6ff536cac19b_RECOMENDATION_16_9.jpg","category":"Other"},{"id":"ticketmaster-1AdjZbUGklZNpvW","source":"ticketmaster","name":"James Morrison","description":"","date":"2026-05-26T18:00:00Z","venue":"Bristol Beacon","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/james-morrison-bristol-26-05-2026/event/3700636AC08D607D","image":"https://s1.ticketm.net/dam/a/1f4/319cba7c-0cd3-43a0-9c06-a352ce2741f4_CUSTOM.jpg","category":"Other"},{"id":"ticketmaster-G5vHZ_7wD7Nnt","source":"ticketmaster","name":"Skipinnish","description":"","date":"2026-05-26T18:00:00Z","venue":"St George's Bristol","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/skipinnish-bristol-26-05-2026/event/1F00644CBB123AA9","image":"https://s1.ticketm.net/dam/a/996/fa65f824-5f61-4a54-9ef1-49e0b9888996_SOURCE","category":"Other"},{"id":"ticketmaster-G5vHZbMtd1uNw","source":"ticketmaster","name":"Sarah Kinsley","description":"","date":"2026-05-26T18:30:00Z","venue":"The Fleece","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/sarah-kinsley-bristol-26-05-2026/event/1F00637A4328D8F2","image":"https://s1.ticketm.net/dam/a/754/f2535e66-a672-4539-b7a0-f88aaed78754_EVENT_DETAIL_PAGE_16_9.jpg","category":"Other"},{"id":"ticketmaster-G5vHZ_A-61nGX","source":"ticketmaster","name":"Girl In The Year Above","description":"","date":"2026-05-26T18:30:00Z","venue":"The Louisiana","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/girl-in-the-year-above-bristol-26-05-2026/event/1F006458472AA33E","image":"https://s1.ticketm.net/dam/a/3a8/c3daaf64-a26e-464d-bdfd-9f91e55003a8_ARTIST_PAGE_3_2.jpg","category":"Other"},{"id":"ticketmaster-1AMZkubGkdzpqgx","source":"ticketmaster","name":"MARINA - The Princess of Power Tour","description":"","date":"2026-05-27T18:00:00Z","venue":"Bristol Beacon","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/marina-the-princess-of-power-tour-bristol-27-05-2026/event/37006358F859DD62","image":"https://s1.ticketm.net/dam/a/dab/c0f9c8b1-0b82-44b6-a243-1324257c6dab_RETINA_LANDSCAPE_16_9.jpg","category":"Tour"},{"id":"ticketmaster-G5vHZ_knBPd4B","source":"ticketmaster","name":"Ruby Roberts","description":"","date":"2026-05-27T18:00:00Z","venue":"Rough Trade Bristol","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/ruby-roberts-bristol-27-05-2026/event/1F00646ABA94357A","image":"https://s1.ticketm.net/dam/a/a6b/749592a0-1d0e-4f43-9500-d1b79218ca6b_TABLET_LANDSCAPE_LARGE_16_9.jpg","category":"Other"},{"id":"ticketmaster-1AwZku8GkeIteA6","source":"ticketmaster","name":"Finn Forster","description":"","date":"2026-05-27T18:30:00Z","venue":"Exchange Bristol","cost":"Price TBA","url":"https://www.ticketweb.uk/event/finn-forster-exchange-bristol-tickets/14625813?REFERRAL_ID=tmfeed","image":"https://s1.ticketm.net/dam/a/619/12a4b43d-856f-4ace-a26e-48ae3545e619_TABLET_LANDSCAPE_16_9.jpg","category":"Other"},{"id":"ticketmaster-16dfZbgfeG7mhxb","source":"ticketmaster","name":"England Women V India (Cricket)","description":"","date":"2026-05-30T13:30:00Z","venue":"Seat Unique Stadium","cost":"Price TBA","url":"https://www.eticketing.co.uk/glosccc/EDP/Event/Index/1346?utm_source=Ticketmaster&utm_medium=Shell-Event&utm_campaign=cl:Gloucestershire-CC-chl:Shell-Event-v.EN","image":"https://s1.ticketm.net/dam/c/bc3/8490d3ca-7bb6-4662-ab7c-acc9f5d97bc3_106051_TABLET_LANDSCAPE_16_9.jpg","category":"Sports"},{"id":"ticketmaster-G5dzZ_6d767g6","source":"ticketmaster","name":"Day Fever","description":"Security - Bag Policy: Large bags including rucksacks are not allowed. There are no facilities to leave large bags or luggage. If you really have to bring a bag - and it's preferable you don't, please make sure it's small. Only one small bag per person is permitted and it must not be bigger than A4 size. Height: 28.7cm Width: 21cm Depth 15cm","date":"2026-05-30T14:00:00Z","venue":"O2 Academy Bristol","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/day-fever-bristol-30-05-2026/event/3E006470C41C4D47","image":"https://s1.ticketm.net/dam/a/2ce/4bcaf37f-d4e2-41b2-9041-0cdc6d3a42ce_RECOMENDATION_16_9.jpg","category":"Other"},{"id":"ticketmaster-LvZ18QhA56YgPb8ZiKlj-","source":"ticketmaster","name":"Day Fever - Bristol","description":" DAY FEVER HAS TAKEN OVER THE COUNTRY!\n\nThe day-time clubbing event started by Vicky McClure, Jonny Owen and Reverend &amp; The Makers has swept the UK since it’s launch in 2024\n‘The day-time disco that doesn’t ruin your Sunday’ has amassed a huge following with thousands of punters packing out clubs and theatres every weekend to dance the day away from. A whole generation who perhaps thought their clubbing days were behind them are blazing a trail for a new way to enjoy themselves.\nDay Fever prides itself on creating a safe-space where people can just be themselves. No dress code, no egos, just enjoyment and positivity. This has seen a loyal fanbase leading to sold out shows in some of the countries most famous venues.\n\nThe music policy is simple, the greatest hits of the 20th century. Why can’t Madonna sit next to Madness? Pulp go back to back with Prince? The Stone Roses and The Rolling Stones?\n90’s dance classics versus a spot of Motown? Why choose when you can enjoy it all?\nVicky McClure says ‘Travelling up and down the country and seeing so many people enjoying themselves has been such a joy, we’re just so happy that people feel comfortable at Day Fever and meeting and hearing everyone’s stories has made us realise how important it is for us all to take some time out of life and just have a bloody good dance!’\nFollow DAY FEVER on Facebook, Instagram, TikTok and X - @DAYFEVERUK\n\nOVER 18S ONLY/ID REQ, NO BAGS BIGGER THAN A4 SIZE","date":"2026-05-30T14:00:00Z","venue":"O2 Academy Bristol","cost":"Price TBA","url":"https://www.universe.com/events/day-fever-bristol-tickets-KJXY6M?ref=ticketmaster","image":"https://s1.ticketm.net/dam/a/2ce/4bcaf37f-d4e2-41b2-9041-0cdc6d3a42ce_RECOMENDATION_16_9.jpg","category":"Theater"},{"id":"ticketmaster-G5vHZ_dL-CPIv","source":"ticketmaster","name":"SUGAR - Love You Even Still 2026 World Tour","description":"SUGAR has partnered with PLUS1 so that £2 from every ticket sold goes to supporting AKT and their work providing support for LGBTQ+ young people who are experiencing homelessness; and the Amy Winehouse Foundation and their work helping young people to make informed choices about drugs and alcohol. https://www.akt.org.uk/about/ https://amywinehousefoundation.org/","date":"2026-05-30T17:30:00Z","venue":"Electric Bristol","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/sugar-love-you-even-still-2026-bristol-30-05-2026/event/1F006437E13A5A01","image":"https://s1.ticketm.net/dam/a/310/3a20aa39-abd3-4873-b146-7a7c2a311310_CUSTOM.jpg","category":"Art"},{"id":"ticketmaster-LvZ18QpyaQOwXDYZwPj53","source":"ticketmaster","name":"SUGAR","description":"DHP Presents\nSUGAR \nLove You Even Still 2026 World Tour \n\nSUGAR has partnered with PLUS1 so that €2/£2 from every ticket sold will go to organizations working to support and empower the health and wellbeing of LGBTQ+ communities. www.plus1.org ","date":"2026-05-30T17:30:00Z","venue":"Electric Bristol","cost":"Price TBA","url":"https://www.universe.com/events/sugar-tickets-6M8D75?ref=ticketmaster","image":"https://s1.ticketm.net/dam/a/ab5/5fadb9e7-a0d2-4f6c-afba-057af3866ab5_RETINA_PORTRAIT_16_9.jpg","category":"Art"},{"id":"ticketmaster-1AMZkCdGkesFlZY","source":"ticketmaster","name":"The Longest Johns","description":"","date":"2026-05-30T18:00:00Z","venue":"Bristol Beacon","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/the-longest-johns-bristol-30-05-2026/event/37006383B122B030","image":"https://s1.ticketm.net/dam/a/c0c/4f2de467-9ccf-4444-ab62-c54f8787bc0c_ARTIST_PAGE_3_2.jpg","category":"Other"},{"id":"ticketmaster-17GOvxG65hWC3yd","source":"ticketmaster","name":"Islandman","description":"","date":"2026-05-30T18:00:00Z","venue":"Bristol Strange Brew","cost":"Price TBA","url":"https://www.ticketweb.uk/event/islandman-strange-brew-tickets/14496253?REFERRAL_ID=tmfeed","image":"https://s1.ticketm.net/dam/c/df8/81eadad8-4449-412e-a2b1-3d8bbb78edf8_106181_RECOMENDATION_16_9.jpg","category":"Other"},{"id":"ticketmaster-1AdjZbUGkls8zm_","source":"ticketmaster","name":"BAFTA Games In Concert","description":"BAFTA Games in Concert Join the full forces of a 65-piece orchestra in the official performance of nominated and award-winning music from 20 years of the BAFTA Games Awards, synchronised live with dynamic visuals, gameplay and imagery on screen. Celebrating the outstanding composers behind the music, this concert features exclusive suites from iconic games soundtracks, spanning household names to pioneering independent studios including: Everybody's Gone to the Rapture by Jessica Curry Baldur's Gate 3 by Borislav Slavov Hitman: Contracts by Jesper Kyd Tomb Raider: Legend by Troels Brun Folmann Assassin's Creed by Jesper Kyd Cuphead by Kris Maddigan Journey by Austin Wintory Helldivers 2 by Wilbert Roget, II Fallout 4 by Inon Zur Disco Elysium by Sea Power Ori and the Will of the Wisps by Gareth Coker Returnal by Bobby Krlic Uncharted 2: Among Thieves by Greg Edmonson Far Cry 4 by Cliff Martinez Virginia by Lyndon Holland","date":"2026-05-31T17:30:00Z","venue":"Bristol Beacon","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/bafta-games-in-concert-bristol-31-05-2026/event/3700636AF1438B99","image":"https://s1.ticketm.net/dam/a/f4d/fa3d5ddd-0b97-4068-bf24-5ffe4378df4d_TABLET_LANDSCAPE_3_2.jpg","category":"Concert"},{"id":"ticketmaster-G5dzZbnEmPs_k","source":"ticketmaster","name":"My Leonard Cohen","description":"Limited unreserved Seating available, first come first served. Security - Bag Policy: Large bags including rucksacks are not allowed. There are no facilities to leave large bags or luggage. If you really have to bring a bag - and it's preferable you don't, please make sure it's small. Only one small bag per person is permitted and it must not be bigger than A4 size. Height: 28.7cm Width: 21cm Depth: 15cm","date":"2026-05-31T18:00:00Z","venue":"O2 Academy Bristol","cost":"Price TBA","url":"https://www.ticketmaster.co.uk/my-leonard-cohen-bristol-31-05-2026/event/3E0062A9EE971646","image":"https://s1.ticketm.net/dam/a/307/f8c978f5-20a8-4da2-808b-ef507d420307_CUSTOM.jpg","category":"Other"}];
+        let selectedDay = new Date().toISOString().split('T')[0];
+        let selectedCategories = new Set(['Concert', 'Festival', 'Theater', 'Sports', 'Art', 'Food', 'Family', 'Nightlife', 'Conference', 'Tour', 'Market', 'Other']);
+
+        function getDateKey(dateString) {
+          return new Date(dateString).toISOString().split('T')[0];
+        }
+
+        function getDayName(dateString) {
+          const date = new Date(dateString + 'T00:00:00Z');
+          return date.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' });
+        }
+
+        function filterAndDisplayEvents() {
+          const filtered = events.filter(event => {
+            const eventDay = getDateKey(event.date);
+            const categoryMatch = selectedCategories.has(event.category);
+            const dayMatch = eventDay === selectedDay;
+            return categoryMatch && dayMatch;
+          });
+
+          const container = document.getElementById('eventsContainer');
+          if (filtered.length === 0) {
+            container.innerHTML = '<div class="no-events"><p>No events found for this day and category selection.</p></div>';
+          } else {
+            container.innerHTML = filtered.map(e => this.generateEventCard(e)).join('');
+          }
+        }
+
+        function addEventToCalendar(event) {
+          const startDate = new Date(event.date);
+          const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+
+          const ical = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Bristol Events//EN\nBEGIN:VEVENT\nUID:' + event.id + '\nDTSTART:' + startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\nDTEND:' + endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\nSUMMARY:' + event.name + '\nDESCRIPTION:' + (event.description || '') + '\nLOCATION:' + event.venue + '\nEND:VEVENT\nEND:VCALENDAR';
+
+          const link = document.createElement('a');
+          link.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ical);
+          link.download = event.name + '.ics';
+          link.click();
+        }
+
+        document.querySelectorAll('.day-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            document.querySelectorAll('.day-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            selectedDay = this.dataset.date;
+            filterAndDisplayEvents();
+          });
+        });
+
+        document.querySelectorAll('.category-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            const category = this.dataset.category;
+            if (selectedCategories.has(category)) {
+              selectedCategories.delete(category);
+              this.classList.remove('active');
+            } else {
+              selectedCategories.add(category);
+              this.classList.add('active');
+            }
+            filterAndDisplayEvents();
+          });
+        });
+
+        // Set today as active day on load
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelector('[data-date="' + today + '"]')?.classList.add('active');
+    </script>
 </body>
 </html>
     
