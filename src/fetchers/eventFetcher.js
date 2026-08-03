@@ -4,6 +4,7 @@ class EventFetcher {
   constructor() {
     this.skiddleApiKey = process.env.SKIDDLE_KEY;
     this.eventbriteApiKey = process.env.EVENTBRITE_API_KEY;
+    this.ticketmasterApiKey = process.env.TICKETMASTER_API_KEY;
   }
 
   async fetchSkiddleEvents() {
@@ -121,13 +122,88 @@ class EventFetcher {
     return null;
   }
 
+  async fetchTicketmasterEvents() {
+    if (!this.ticketmasterApiKey) {
+      console.log('Ticketmaster API key not configured, skipping...');
+      return [];
+    }
+
+    try {
+      console.log('Fetching from Ticketmaster API...');
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const startDateTime = today.toISOString().replace(/\.\d{3}Z$/, 'Z');
+      const endDateTime = nextWeek.toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+      const response = await axios.get('https://app.ticketmaster.com/discovery/v2/events.json', {
+        params: {
+          apikey: this.ticketmasterApiKey,
+          city: 'Bristol',
+          countryCode: 'GB',
+          startDateTime,
+          endDateTime,
+          size: 200,
+          sort: 'date,asc'
+        }
+      });
+
+      const events = response.data?._embedded?.events || [];
+
+      return events.map(event => ({
+        id: `ticketmaster-${event.id}`,
+        source: 'ticketmaster',
+        name: event.name,
+        description: event.info || event.pleaseNote || '',
+        date: event.dates?.start?.dateTime || event.dates?.start?.localDate,
+        venue: event._embedded?.venues?.[0]?.name || 'Venue TBA',
+        cost: this.extractTicketmasterCost(event),
+        url: event.url,
+        image: this.extractTicketmasterImage(event),
+        status: this.extractTicketmasterStatus(event)
+      })).filter(event => event.name);
+    } catch (error) {
+      console.error('Ticketmaster API error:', error.message);
+      return [];
+    }
+  }
+
+  extractTicketmasterCost(event) {
+    const ranges = event.priceRanges;
+    if (!ranges || ranges.length === 0) return 'Price TBA';
+    const range = ranges[0];
+    const fmt = (n) => Number.isInteger(n) ? `£${n}` : `£${n.toFixed(2)}`;
+    if (range.min === range.max) return fmt(range.min);
+    return `${fmt(range.min)} - ${fmt(range.max)}`;
+  }
+
+  extractTicketmasterImage(event) {
+    const images = event.images || [];
+    const wideImages = images
+      .filter(img => img.ratio === '16_9')
+      .sort((a, b) => b.width - a.width);
+    return wideImages[0]?.url || images[0]?.url || null;
+  }
+
+  extractTicketmasterStatus(event) {
+    const code = event.dates?.status?.code;
+    if (code === 'cancelled') return 'cancelled';
+    if (code === 'postponed') return 'postponed';
+    if (code === 'rescheduled') return 'rescheduled';
+    if (code === 'offsale') return 'off_sale';
+    return null;
+  }
+
   async fetchAll() {
-    const events = [];
+    const [skiddle, eventbrite, ticketmaster] = await Promise.all([
+      this.fetchSkiddleEvents(),
+      this.fetchEventbriteEvents(),
+      this.fetchTicketmasterEvents()
+    ]);
 
-    events.push(...await this.fetchSkiddleEvents());
-    events.push(...await this.fetchEventbriteEvents());
+    const total = skiddle.length + eventbrite.length + ticketmaster.length;
+    console.log(`Fetched: ${skiddle.length} Skiddle, ${eventbrite.length} Eventbrite, ${ticketmaster.length} Ticketmaster (${total} total)`);
 
-    return events;
+    return [...skiddle, ...eventbrite, ...ticketmaster];
   }
 }
 
