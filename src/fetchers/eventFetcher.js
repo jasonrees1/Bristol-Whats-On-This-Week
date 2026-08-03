@@ -75,45 +75,78 @@ class EventFetcher {
     return null;
   }
 
+  // Eventbrite removed location-based search in Feb 2020.
+  // We query known Bristol organisers by ID instead.
+  static get BRISTOL_EVENTBRITE_ORGANISERS() {
+    return [
+      { id: '32724125543', name: 'Bristol City Council' },
+      { id: '31140565679', name: 'Tobacco Factory' },
+      { id: '30072911048', name: 'Watershed' },
+      { id: '8288549531',  name: 'Bristol Beacon' },
+      { id: '16913320250', name: 'The Fleece' },
+      { id: '210213264',   name: 'Theatre Bristol' },
+      { id: '11348031029', name: 'Bristol Creative Industries' },
+      { id: '11179795567', name: 'Bristol Libraries' },
+    ];
+  }
+
   async fetchEventbriteEvents() {
     if (!this.eventbriteApiKey) {
       console.log('Eventbrite API key not configured, skipping...');
       return [];
     }
 
-    try {
-      console.log('Fetching from Eventbrite API...');
-      const response = await axios.get('https://www.eventbriteapi.com/v3/events/search/', {
-        params: {
-          'location.address': 'Bristol, UK',
-          'sort_by': 'date',
-          'token': this.eventbriteApiKey
-        },
-        headers: {
-          'Authorization': `Bearer ${this.eventbriteApiKey}`
-        }
-      });
+    console.log('Fetching from Eventbrite API (organiser queries)...');
 
-      if (!response.data.events) {
-        return [];
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const startRange = today.toISOString();
+    const endRange = nextWeek.toISOString();
+
+    const settled = await Promise.allSettled(
+      EventFetcher.BRISTOL_EVENTBRITE_ORGANISERS.map(({ id, name }) =>
+        axios.get(`https://www.eventbriteapi.com/v3/organizers/${id}/events/`, {
+          params: {
+            status: 'live',
+            'start_date.range_start': startRange,
+            'start_date.range_end': endRange,
+            expand: 'venue',
+          },
+          headers: { 'Authorization': `Bearer ${this.eventbriteApiKey}` }
+        }).then(r => ({ organiserName: name, events: r.data.events || [] }))
+      )
+    );
+
+    const events = [];
+    for (const result of settled) {
+      if (result.status === 'rejected') {
+        console.error('Eventbrite organiser fetch failed:', result.reason?.message);
+        continue;
       }
-
-      return response.data.events.map(event => ({
-        id: `eventbrite-${event.id}`,
-        source: 'eventbrite',
-        name: event.name.text,
-        description: event.description?.text || '',
-        date: event.start.utc,
-        venue: event.venue_id ? `Venue ${event.venue_id}` : 'Venue TBA',
-        cost: event.ticket_classes?.[0]?.cost?.display || 'Price TBA',
-        url: event.url,
-        image: event.logo?.original?.url || null,
-        status: this.extractEventbriteStatus(event)
-      }));
-    } catch (error) {
-      console.error('Eventbrite API error:', error.message);
-      return [];
+      const { organiserName, events: orgEvents } = result.value;
+      for (const event of orgEvents) {
+        events.push({
+          id: `eventbrite-${event.id}`,
+          source: 'eventbrite',
+          name: event.name?.text || null,
+          description: event.description?.text || '',
+          date: event.start?.utc || event.start?.local,
+          venue: event.venue?.name || organiserName,
+          cost: this.extractEventbriteCost(event),
+          url: event.url,
+          image: event.logo?.original?.url || null,
+          status: this.extractEventbriteStatus(event)
+        });
+      }
     }
+
+    console.log(`Eventbrite: ${events.length} events from ${EventFetcher.BRISTOL_EVENTBRITE_ORGANISERS.length} organisers`);
+    return events.filter(e => e.name);
+  }
+
+  extractEventbriteCost(event) {
+    if (event.is_free) return 'Free';
+    return 'Price TBA';
   }
 
   extractEventbriteStatus(event) {

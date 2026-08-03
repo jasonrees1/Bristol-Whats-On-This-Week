@@ -29,6 +29,35 @@ describe('EventFetcher', () => {
     });
   });
 
+  describe('extractEventbriteCost', () => {
+    it('should return Free for free events', () => {
+      expect(fetcher.extractEventbriteCost({ is_free: true })).toBe('Free');
+    });
+
+    it('should return Price TBA for paid events', () => {
+      expect(fetcher.extractEventbriteCost({ is_free: false })).toBe('Price TBA');
+    });
+
+    it('should return Price TBA when is_free is missing', () => {
+      expect(fetcher.extractEventbriteCost({})).toBe('Price TBA');
+    });
+  });
+
+  describe('BRISTOL_EVENTBRITE_ORGANISERS', () => {
+    it('should include at least 5 Bristol organisers', () => {
+      expect(EventFetcher.BRISTOL_EVENTBRITE_ORGANISERS.length).toBeGreaterThanOrEqual(5);
+    });
+
+    it('should have id and name fields on every entry', () => {
+      for (const org of EventFetcher.BRISTOL_EVENTBRITE_ORGANISERS) {
+        expect(org).toHaveProperty('id');
+        expect(org).toHaveProperty('name');
+        expect(typeof org.id).toBe('string');
+        expect(typeof org.name).toBe('string');
+      }
+    });
+  });
+
   describe('extractSkiddleStatus', () => {
     it('should return cancelled when cancelled flag is set', () => {
       const event = { cancelled: '1', soldout: '0', ticketsAvailable: '1' };
