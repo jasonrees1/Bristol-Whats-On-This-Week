@@ -30,6 +30,8 @@ jobs:
           SKIDDLE_KEY: ${{ secrets.SKIDDLE_KEY }}
           EVENTBRITE_API_KEY: ${{ secrets.EVENTBRITE_API_KEY }}
           TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+          ENTS24_CLIENT_ID: ${{ secrets.ENTS24_CLIENT_ID }}
+          ENTS24_CLIENT_SECRET: ${{ secrets.ENTS24_CLIENT_SECRET }}
 
       - name: Commit and push if changes
         run: |

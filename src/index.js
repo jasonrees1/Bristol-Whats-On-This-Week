@@ -1,5 +1,6 @@
 const EventFetcher = require('./fetchers/eventFetcher');
 const ArnolfiniFetcher = require('./fetchers/arnolfiniFetcher');
+const Ents24Fetcher = require('./fetchers/ents24Fetcher');
 const DataProcessor = require('./processors/dataProcessor');
 const HtmlGenerator = require('./generator/htmlGenerator');
 const fs = require('fs');
@@ -9,12 +10,13 @@ async function main() {
   try {
     console.log('Starting event fetch for Bristol...');
 
-    const [apiEvents, arnolfiniEvents] = await Promise.all([
+    const [apiEvents, arnolfiniEvents, ents24Events] = await Promise.all([
       new EventFetcher().fetchAll(),
-      new ArnolfiniFetcher().fetchEvents()
+      new ArnolfiniFetcher().fetchEvents(),
+      new Ents24Fetcher().fetchEvents()
     ]);
 
-    const rawEvents = [...apiEvents, ...arnolfiniEvents];
+    const rawEvents = [...apiEvents, ...arnolfiniEvents, ...ents24Events];
     console.log(`Fetched ${rawEvents.length} raw events`);
 
     // Process and filter events
