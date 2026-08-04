@@ -1,0 +1,14 @@
+[
+  {
+    "_comment": "Add events here that cannot be fetched automatically (e.g. Bristol Hippodrome musicals).",
+    "_format": {
+      "name": "required — event title",
+      "date": "required — ISO 8601, e.g. 2026-08-12T19:30:00",
+      "venue": "required — venue name",
+      "url": "required — link to book or get more info",
+      "cost": "optional — e.g. '£15 - £45' or 'Free'. Defaults to 'Price TBA'",
+      "description": "optional — short blurb",
+      "image": "optional — URL of a poster or image"
+    }
+  }
+]

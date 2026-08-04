@@ -5,6 +5,7 @@ const { HeadfirstFetcher } = require('./fetchers/headfirstFetcher');
 const { StGeorgesFetcher } = require('./fetchers/stGeorgesFetcher');
 const { WatershedFetcher } = require('./fetchers/watershedFetcher');
 const { WethecuriousFetcher } = require('./fetchers/wethecuriousFetcher');
+const ManualFetcher = require('./fetchers/manualFetcher');
 const DataProcessor = require('./processors/dataProcessor');
 const HtmlGenerator = require('./generator/htmlGenerator');
 const fs = require('fs');
@@ -13,6 +14,8 @@ const path = require('path');
 async function main() {
   try {
     console.log('Starting event fetch for Bristol...');
+
+    const manualEvents = new ManualFetcher().fetchEvents();
 
     const [apiEvents, arnolfiniEvents, ents24Events, headfirstEvents, stGeorgesEvents, watershedEvents, wtcEvents] = await Promise.all([
       new EventFetcher().fetchAll(),
@@ -24,7 +27,7 @@ async function main() {
       new WethecuriousFetcher().fetchEvents()
     ]);
 
-    const rawEvents = [...apiEvents, ...arnolfiniEvents, ...ents24Events, ...headfirstEvents, ...stGeorgesEvents, ...watershedEvents, ...wtcEvents];
+    const rawEvents = [...manualEvents, ...apiEvents, ...arnolfiniEvents, ...ents24Events, ...headfirstEvents, ...stGeorgesEvents, ...watershedEvents, ...wtcEvents];
     console.log(`Fetched ${rawEvents.length} raw events`);
 
     // Process and filter events
