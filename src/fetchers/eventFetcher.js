@@ -226,17 +226,83 @@ class EventFetcher {
     return null;
   }
 
+  // Venues API lookup + targeted events query for Bristol Hippodrome.
+  // ATG sells concerts/comedy through Ticketmaster but not all their shows.
+  // The city-wide query may miss Hippodrome events if the result set is large,
+  // so this dedicated query guarantees we capture everything ATG lists on TM.
+  async fetchTicketmasterHippodromeEvents() {
+    if (!this.ticketmasterApiKey) return [];
+
+    try {
+      // Step 1: resolve the API-format venue ID dynamically
+      const venueRes = await axios.get('https://app.ticketmaster.com/discovery/v2/venues.json', {
+        params: {
+          apikey: this.ticketmasterApiKey,
+          keyword: 'Bristol Hippodrome',
+          countryCode: 'GB',
+          size: 5
+        }
+      });
+
+      const venues = venueRes.data?._embedded?.venues || [];
+      const hippodrome = venues.find(v =>
+        v.name?.toLowerCase().includes('hippodrome') &&
+        v.city?.name?.toLowerCase() === 'bristol'
+      );
+
+      if (!hippodrome) {
+        console.log('Ticketmaster Hippodrome: venue not found, skipping');
+        return [];
+      }
+
+      // Step 2: fetch events at that venue for the next 7 days
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      const eventsRes = await axios.get('https://app.ticketmaster.com/discovery/v2/events.json', {
+        params: {
+          apikey: this.ticketmasterApiKey,
+          venueId: hippodrome.id,
+          startDateTime: today.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+          endDateTime: nextWeek.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+          size: 100,
+          sort: 'date,asc'
+        }
+      });
+
+      const events = eventsRes.data?._embedded?.events || [];
+      console.log(`Ticketmaster Hippodrome: ${events.length} events`);
+
+      return events.map(event => ({
+        id: `ticketmaster-${event.id}`,
+        source: 'ticketmaster',
+        name: event.name,
+        description: event.info || event.pleaseNote || '',
+        date: event.dates?.start?.dateTime || event.dates?.start?.localDate,
+        venue: event._embedded?.venues?.[0]?.name || 'Bristol Hippodrome',
+        cost: this.extractTicketmasterCost(event),
+        url: event.url,
+        image: this.extractTicketmasterImage(event),
+        status: this.extractTicketmasterStatus(event)
+      })).filter(e => e.name);
+    } catch (err) {
+      console.error('Ticketmaster Hippodrome fetch failed:', err.message);
+      return [];
+    }
+  }
+
   async fetchAll() {
-    const [skiddle, eventbrite, ticketmaster] = await Promise.all([
+    const [skiddle, eventbrite, ticketmaster, hippodrome] = await Promise.all([
       this.fetchSkiddleEvents(),
       this.fetchEventbriteEvents(),
-      this.fetchTicketmasterEvents()
+      this.fetchTicketmasterEvents(),
+      this.fetchTicketmasterHippodromeEvents()
     ]);
 
-    const total = skiddle.length + eventbrite.length + ticketmaster.length;
-    console.log(`Fetched: ${skiddle.length} Skiddle, ${eventbrite.length} Eventbrite, ${ticketmaster.length} Ticketmaster (${total} total)`);
+    const total = skiddle.length + eventbrite.length + ticketmaster.length + hippodrome.length;
+    console.log(`Fetched: ${skiddle.length} Skiddle, ${eventbrite.length} Eventbrite, ${ticketmaster.length} Ticketmaster, ${hippodrome.length} Hippodrome (${total} total)`);
 
-    return [...skiddle, ...eventbrite, ...ticketmaster];
+    return [...skiddle, ...eventbrite, ...ticketmaster, ...hippodrome];
   }
 }
 

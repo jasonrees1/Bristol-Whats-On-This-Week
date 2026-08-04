@@ -201,6 +201,117 @@ describe('EventFetcher', () => {
     });
   });
 
+  describe('fetchTicketmasterHippodromeEvents', () => {
+    const axios = require('axios');
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it('returns [] when Ticketmaster API key is not configured', async () => {
+      fetcher.ticketmasterApiKey = null;
+      expect(await fetcher.fetchTicketmasterHippodromeEvents()).toEqual([]);
+    });
+
+    it('returns [] when venues API does not find Bristol Hippodrome', async () => {
+      fetcher.ticketmasterApiKey = 'test-key';
+      jest.spyOn(axios, 'get').mockResolvedValueOnce({ data: { _embedded: { venues: [] } } });
+      expect(await fetcher.fetchTicketmasterHippodromeEvents()).toEqual([]);
+    });
+
+    it('returns [] and does not throw when venues API fails', async () => {
+      fetcher.ticketmasterApiKey = 'test-key';
+      jest.spyOn(axios, 'get').mockRejectedValueOnce(new Error('Network error'));
+      expect(await fetcher.fetchTicketmasterHippodromeEvents()).toEqual([]);
+    });
+
+    it('fetches events when Hippodrome venue is found', async () => {
+      fetcher.ticketmasterApiKey = 'test-key';
+      jest.spyOn(axios, 'get')
+        .mockResolvedValueOnce({
+          data: {
+            _embedded: {
+              venues: [{ id: 'KovZpZAE6lFa', name: 'Bristol Hippodrome', city: { name: 'Bristol' } }]
+            }
+          }
+        })
+        .mockResolvedValueOnce({
+          data: {
+            _embedded: {
+              events: [{
+                id: 'TM001',
+                name: 'Kevin Bridges: Here If You Need Me',
+                url: 'https://ticketmaster.co.uk/event/TM001',
+                dates: { start: { dateTime: '2026-09-15T20:00:00Z' }, status: { code: 'onsale' } },
+                priceRanges: [{ min: 35, max: 35 }],
+                images: [],
+                _embedded: { venues: [{ name: 'Bristol Hippodrome' }] }
+              }]
+            }
+          }
+        });
+
+      const result = await fetcher.fetchTicketmasterHippodromeEvents();
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('ticketmaster-TM001');
+      expect(result[0].name).toBe('Kevin Bridges: Here If You Need Me');
+      expect(result[0].venue).toBe('Bristol Hippodrome');
+      expect(result[0].source).toBe('ticketmaster');
+    });
+
+    it('uses Bristol Hippodrome as fallback venue name when embedded venue is missing', async () => {
+      fetcher.ticketmasterApiKey = 'test-key';
+      jest.spyOn(axios, 'get')
+        .mockResolvedValueOnce({
+          data: {
+            _embedded: {
+              venues: [{ id: 'KovZpZAE6lFa', name: 'Bristol Hippodrome', city: { name: 'Bristol' } }]
+            }
+          }
+        })
+        .mockResolvedValueOnce({
+          data: {
+            _embedded: {
+              events: [{
+                id: 'TM002',
+                name: 'Show Without Venue',
+                url: 'https://ticketmaster.co.uk/event/TM002',
+                dates: { start: { dateTime: '2026-09-16T19:30:00Z' } },
+                images: []
+              }]
+            }
+          }
+        });
+
+      const result = await fetcher.fetchTicketmasterHippodromeEvents();
+      expect(result[0].venue).toBe('Bristol Hippodrome');
+    });
+
+    it('filters out events with no name', async () => {
+      fetcher.ticketmasterApiKey = 'test-key';
+      jest.spyOn(axios, 'get')
+        .mockResolvedValueOnce({
+          data: {
+            _embedded: {
+              venues: [{ id: 'KovZpZAE6lFa', name: 'Bristol Hippodrome', city: { name: 'Bristol' } }]
+            }
+          }
+        })
+        .mockResolvedValueOnce({
+          data: {
+            _embedded: {
+              events: [
+                { id: 'TM003', name: 'Valid Show', url: 'https://example.com', dates: { start: { dateTime: '2026-09-15T20:00:00Z' } }, images: [] },
+                { id: 'TM004', name: null, url: 'https://example.com', dates: { start: { dateTime: '2026-09-16T20:00:00Z' } }, images: [] }
+              ]
+            }
+          }
+        });
+
+      const result = await fetcher.fetchTicketmasterHippodromeEvents();
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Valid Show');
+    });
+  });
+
   describe('Ticketmaster event mapping', () => {
     it('should map Ticketmaster API response to common event format', () => {
       const mockTmEvent = {
