@@ -1,629 +1,760 @@
 class HtmlGenerator {
-  constructor() {
-    this.categoryColors = {
-      'Concert': '#1E90FF',
-      'Festival': '#FF69B4',
-      'Theater': '#9B59B6',
-      'Sports': '#2ECC71',
-      'Art': '#E74C3C',
-      'Food': '#E67E22',
-      'Family': '#FF69B4',
-      'Nightlife': '#2C3E50',
-      'Conference': '#95A5A6',
-      'Tour': '#A0826D',
-      'Market': '#F39C12',
-      'Other': '#7F8C8D'
-    };
-
-    this.mainCategories = ['Concert', 'Food', 'Sports', 'Theater', 'Art'];
-    this.additionalCategories = ['Festival', 'Family', 'Nightlife', 'Conference', 'Tour', 'Market', 'Other'];
-  }
-
   generate(events) {
-    const html = `
-<!DOCTYPE html>
+    const eventsJson = JSON.stringify(events);
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>What's On in Bristol This Week</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background: #f8f9fa;
-          color: #333;
-        }
-
-        header {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          padding: 30px 20px;
-          text-align: center;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        header h1 { font-size: 2.5em; margin-bottom: 5px; }
-        header p { font-size: 0.9em; opacity: 0.9; }
-
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-
-        /* Day Selector */
-        .day-selector {
-          display: flex;
-          gap: 10px;
-          margin: 30px 0;
-          flex-wrap: wrap;
-          padding: 20px;
-          background: white;
-          border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-          position: sticky;
-          top: 0;
-          z-index: 100;
-        }
-
-        .day-btn {
-          padding: 12px 20px;
-          border: 2px solid #ddd;
-          background: white;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 1em;
-          font-weight: 500;
-          transition: all 0.3s ease;
-          min-width: 100px;
-          text-align: center;
-        }
-
-        .day-btn:hover { border-color: #667eea; color: #667eea; }
-        .day-btn.active {
-          background: #667eea;
-          color: white;
-          border-color: #667eea;
-        }
-        .day-btn.today {
-          border-color: #ff6b6b;
-        }
-        .day-badge {
-          display: inline-block;
-          background: #ff6b6b;
-          color: white;
-          padding: 2px 8px;
-          border-radius: 4px;
-          font-size: 0.7em;
-          margin-left: 5px;
-        }
-
-        /* Category Filters */
-        .category-filters {
-          background: white;
-          padding: 20px;
-          border-radius: 12px;
-          margin-bottom: 30px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-
-        .filter-row {
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-bottom: 10px;
-        }
-
-        .filter-row:last-child { margin-bottom: 0; }
-
-        .category-btn {
-          padding: 10px 16px;
-          border: 2px solid var(--cat-color, #ddd);
-          color: var(--cat-color, #666);
-          background: white;
-          border-radius: 20px;
-          cursor: pointer;
-          font-size: 0.9em;
-          font-weight: 500;
-          transition: all 0.3s ease;
-          white-space: nowrap;
-        }
-
-        .category-btn:hover { transform: translateY(-2px); }
-        .category-btn.active {
-          background: var(--cat-color, #ddd);
-          color: white;
-          border-color: var(--cat-color, #ddd);
-        }
-
-        /* Events Grid */
-        .events-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-          gap: 20px;
-          margin: 30px 0;
-        }
-
-        .event-card {
-          background: white;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          transition: all 0.3s ease;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .event-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-        }
-
-        .event-image {
-          width: 100%;
-          height: 200px;
-          object-fit: cover;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .event-content {
-          padding: 20px;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-        }
-
-        .event-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 10px;
-        }
-
-        .event-time {
-          font-size: 0.85em;
-          font-weight: 600;
-          color: #667eea;
-        }
-
-        .event-category {
-          display: inline-block;
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 0.75em;
-          font-weight: 600;
-          color: white;
-          margin-left: auto;
-        }
-
-        .event-name {
-          font-size: 1.3em;
-          font-weight: bold;
-          color: #333;
-          margin: 10px 0;
-          line-height: 1.3;
-        }
-
-        .event-meta {
-          color: #666;
-          font-size: 0.9em;
-          margin: 8px 0;
-          line-height: 1.5;
-        }
-
-        .event-meta-item {
-          display: flex;
-          align-items: center;
-          margin-bottom: 5px;
-        }
-
-        .event-meta-item:last-child { margin-bottom: 0; }
-
-        .event-description {
-          color: #555;
-          font-size: 0.9em;
-          margin: 12px 0;
-          flex: 1;
-          line-height: 1.5;
-        }
-
-        .event-actions {
-          display: flex;
-          gap: 10px;
-          margin-top: 15px;
-          padding-top: 15px;
-          border-top: 1px solid #eee;
-        }
-
-        .btn {
-          flex: 1;
-          padding: 10px 15px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 0.9em;
-          font-weight: 600;
-          transition: all 0.3s ease;
-          text-decoration: none;
-          text-align: center;
-          display: inline-block;
-        }
-
-        .btn-primary {
-          background: #667eea;
-          color: white;
-        }
-        .btn-primary:hover { background: #5568d3; }
-
-        .btn-secondary {
-          background: #f0f0f0;
-          color: #333;
-          border: 1px solid #ddd;
-        }
-        .btn-secondary:hover { background: #e8e8e8; }
-
-        /* Status badges */
-        .event-card-wrapper {
-          position: relative;
-        }
-        .status-banner {
-          position: absolute;
-          top: 12px;
-          left: 12px;
-          padding: 5px 12px;
-          border-radius: 6px;
-          font-size: 0.78em;
-          font-weight: 700;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          z-index: 10;
-          pointer-events: none;
-        }
-        .status-cancelled {
-          background: #e74c3c;
-          color: white;
-        }
-        .status-sold_out {
-          background: #e67e22;
-          color: white;
-        }
-        .status-postponed {
-          background: #95a5a6;
-          color: white;
-        }
-        .status-rescheduled {
-          background: #8e44ad;
-          color: white;
-        }
-        .status-off_sale {
-          background: #95a5a6;
-          color: white;
-        }
-        .event-card.is-cancelled {
-          opacity: 0.6;
-          filter: grayscale(60%);
-        }
-        .event-card.is-cancelled .btn-primary {
-          background: #aaa;
-          pointer-events: none;
-        }
-        .event-card.is-sold_out .btn-primary {
-          background: #aaa;
-          pointer-events: none;
-          cursor: not-allowed;
-        }
-
-        .no-events {
-          text-align: center;
-          padding: 40px 20px;
-          background: white;
-          border-radius: 12px;
-          color: #999;
-        }
-
-        .no-events p { font-size: 1.1em; margin-bottom: 10px; }
-
-        footer {
-          background: #2c3e50;
-          color: white;
-          text-align: center;
-          padding: 20px;
-          margin-top: 40px;
-          font-size: 0.9em;
-        }
-
-        @media (max-width: 768px) {
-          header h1 { font-size: 1.8em; }
-          .day-selector { gap: 8px; }
-          .day-btn { min-width: 80px; padding: 10px 15px; font-size: 0.9em; }
-          .events-grid {
-            grid-template-columns: 1fr;
-          }
-          .event-actions {
-            flex-direction: column;
-          }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>What's On in Bristol This Week</title>
+  <style>${this._css()}</style>
 </head>
 <body>
-    <header>
-        <h1>🎭 What's On in Bristol This Week</h1>
-        <p>Last updated: ${new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-    </header>
 
-    <div class="container">
-        <!-- Day Selector -->
-        <div class="day-selector" id="daySelector">
-            ${this.generateDaySelectors()}
-        </div>
+<header class="site-header">
+  <div class="header-brand">
+    <span class="brand-city">Bristol</span>
+    <h1 class="brand-title">What's On</h1>
+  </div>
+  <div class="header-right">
+    <span class="week-label" id="weekLabel"></span>
+    <button class="theme-toggle" id="themeBtn">Light</button>
+  </div>
+</header>
 
-        <!-- Category Filters -->
-        <div class="category-filters">
-          <div class="filter-row">
-            ${this.generateCategoryButtons('main')}
-          </div>
-          <div class="filter-row">
-            ${this.generateCategoryButtons('additional')}
-          </div>
-        </div>
+<nav class="day-strip" aria-label="Browse by day">
+  <div class="day-tabs" id="dayTabs"></div>
+</nav>
 
-        <!-- Events Display -->
-        <div id="eventsContainer">
-            ${events.length === 0 ?
-              '<div class="no-events"><p>No events found for this week.</p></div>' :
-              this.generateEventCards(events)
-            }
-        </div>
+<div class="cat-strip" role="group" aria-label="Filter by category">
+  <div class="cat-pills" id="catPills"></div>
+</div>
+
+<main class="main">
+  <div class="top-heading" id="topHeading">
+    <div class="day-heading">
+      <h2 id="dayHeading">Today</h2>
+      <span class="tally" id="tally"></span>
     </div>
+  </div>
+  <div id="eventsGrid"></div>
+</main>
 
-    <footer>
-        <p>Bristol What's On - Updated every Saturday at 10 AM UTC</p>
-    </footer>
+<footer class="site-footer">
+  <strong>What's On Bristol</strong> &mdash; Updated every Saturday &middot;
+  Sources: Ticketmaster &middot; Eventbrite &middot; Headfirst &middot; Bristol Old Vic &middot; Bristol Hippodrome &middot; St&nbsp;George's &middot; Watershed &middot; We The Curious &middot; Arnolfini
+</footer>
 
-    <script>
-        var events = ${JSON.stringify(events)};
-        var eventsById = {};
-        events.forEach(function(e) { eventsById[e.id] = e; });
-
-        var selectedDay = new Date().toISOString().split('T')[0];
-        var selectedCategory = null;
-
-        var categoryColors = ${JSON.stringify(this.categoryColors)};
-
-        function h(str) {
-          return String(str == null ? '' : str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
-        }
-
-        function getDateKey(ds) {
-          var d = new Date(ds);
-          return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
-        }
-
-        function darkenColor(color) {
-          var num = parseInt(color.replace('#', ''), 16);
-          var amt = Math.round(2.55 * -20);
-          return '#' + (0x1000000 +
-            (Math.max(0, Math.min(255, (num >> 16) + amt)) << 16) +
-            (Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amt)) << 8) +
-            Math.max(0, Math.min(255, (num & 0x0000FF) + amt))).toString(16).slice(1);
-        }
-
-        function renderEventCard(ev) {
-          var cc = categoryColors[ev.category] || '#7F8C8D';
-          var imgHtml = ev.image
-            ? '<img src="' + h(ev.image) + '" alt="' + h(ev.name) + '" class="event-image">'
-            : '<div class="event-image" style="background:linear-gradient(135deg,' + cc + ' 0%,' + darkenColor(cc) + ' 100%);"></div>';
-          var d = new Date(ev.date);
-          var timeStr = isNaN(d.getTime()) ? 'Time TBA' : d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
-          var status = ev.status || null;
-          var statusMap = {cancelled:'Cancelled', sold_out:'Sold Out', postponed:'Postponed', rescheduled:'Rescheduled', off_sale:'Off Sale'};
-          var banner = status ? '<div class="status-banner status-' + status + '">' + (statusMap[status] || status) + '</div>' : '';
-          var cardCls = status ? ' is-' + status : '';
-          var btn;
-          if (status === 'cancelled') {
-            btn = '<span class="btn btn-primary" style="cursor:default;">Cancelled</span>';
-          } else if (status === 'sold_out') {
-            btn = '<span class="btn btn-primary" style="cursor:default;">Sold Out</span>';
-          } else {
-            btn = '<a href="' + h(ev.url) + '" target="_blank" class="btn btn-primary">Learn More</a>';
-          }
-          var desc = ev.description ? (ev.description.length > 150 ? ev.description.substring(0, 150) + '...' : ev.description) : '';
-          return '<div class="event-card-wrapper" style="position:relative;">' +
-            banner +
-            '<div class="event-card' + cardCls + '">' +
-              imgHtml +
-              '<div class="event-content">' +
-                '<div class="event-header">' +
-                  '<div class="event-time">🕐 ' + timeStr + '</div>' +
-                  '<span class="event-category" style="background-color:' + cc + ';">' + h(ev.category || 'Other') + '</span>' +
-                '</div>' +
-                '<div class="event-name">' + h(ev.name) + '</div>' +
-                '<div class="event-meta">' +
-                  '<div class="event-meta-item">📍 ' + h(ev.venue || 'Venue TBA') + '</div>' +
-                  (ev.cost ? '<div class="event-meta-item">💷 ' + h(ev.cost) + '</div>' : '') +
-                '</div>' +
-                (desc ? '<div class="event-description">' + h(desc) + '</div>' : '') +
-                '<div class="event-actions">' +
-                  btn +
-                  '<button class="btn btn-secondary" onclick="addEventToCalendar(\\'' + h(ev.id) + '\\')">&#128197; Add to Calendar</button>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }
-
-        function filterAndDisplayEvents() {
-          var container = document.getElementById('eventsContainer');
-          try {
-            var filtered = events.filter(function(ev) {
-              var catMatch = !selectedCategory || ev.category === selectedCategory;
-              var dayMatch = !selectedDay || getDateKey(ev.date) === selectedDay;
-              return catMatch && dayMatch;
-            });
-            if (filtered.length === 0) {
-              var msg = selectedCategory && selectedDay
-                ? 'No ' + selectedCategory + ' events on this day.'
-                : selectedCategory
-                  ? 'No ' + selectedCategory + ' events found this week.'
-                  : 'No events found for this day.';
-              container.innerHTML = '<div class="no-events"><p>' + h(msg) + '</p></div>';
-            } else {
-              container.innerHTML = filtered.map(renderEventCard).join('');
-            }
-          } catch(err) {
-            container.innerHTML = '<div class="no-events"><p>Error loading events: ' + h(err.message) + '</p></div>';
-            console.error('filterAndDisplayEvents error:', err);
-          }
-        }
-
-        function addEventToCalendar(eventId) {
-          var ev = eventsById[eventId];
-          if (!ev) return;
-          var startDate = new Date(ev.date);
-          var endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-          var ical = 'BEGIN:VCALENDAR\\r\\nVERSION:2.0\\r\\nPRODID:-//Bristol Events//EN\\r\\nBEGIN:VEVENT\\r\\n' +
-            'UID:' + ev.id + '\\r\\n' +
-            'DTSTART:' + startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\\r\\n' +
-            'DTEND:' + endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z\\r\\n' +
-            'SUMMARY:' + (ev.name || '') + '\\r\\n' +
-            'DESCRIPTION:' + (ev.description || '') + '\\r\\n' +
-            'LOCATION:' + (ev.venue || '') + '\\r\\n' +
-            'END:VEVENT\\r\\nEND:VCALENDAR';
-          var link = document.createElement('a');
-          link.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ical);
-          link.download = (ev.name || 'event') + '.ics';
-          link.click();
-        }
-
-        document.querySelectorAll('.day-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            var date = this.dataset.date;
-            document.querySelectorAll('.day-btn').forEach(function(b) { b.classList.remove('active'); });
-            if (selectedDay === date) {
-              selectedDay = null;
-            } else {
-              selectedDay = date;
-              this.classList.add('active');
-            }
-            filterAndDisplayEvents();
-          });
-        });
-
-        document.querySelectorAll('.category-btn').forEach(function(btn) {
-          btn.addEventListener('click', function() {
-            var category = this.dataset.category;
-            document.querySelectorAll('.category-btn').forEach(function(b) { b.classList.remove('active'); });
-            document.querySelectorAll('.day-btn').forEach(function(b) { b.classList.remove('active'); });
-            if (selectedCategory === category) {
-              selectedCategory = null;
-              selectedDay = new Date().toISOString().split('T')[0];
-              var todayBtn2 = document.querySelector('[data-date="' + selectedDay + '"]');
-              if (todayBtn2) { todayBtn2.classList.add('active'); }
-            } else {
-              selectedCategory = category;
-              selectedDay = null;
-              this.classList.add('active');
-            }
-            filterAndDisplayEvents();
-          });
-        });
-
-        // Show today's events on load
-        var todayKey = new Date().toISOString().split('T')[0];
-        var todayBtn = document.querySelector('[data-date="' + todayKey + '"]');
-        if (todayBtn) { todayBtn.classList.add('active'); }
-        filterAndDisplayEvents();
-    </script>
+<script>
+var EVENTS = ${eventsJson};
+// Normalise American/British spelling
+EVENTS.forEach(function(ev) {
+  if (ev.category === 'Theater') ev.category = 'Theatre';
+});
+${this._buildScript()}
+</script>
 </body>
-</html>
-    `;
-    return html;
+</html>`;
   }
 
-  generateDaySelectors() {
-    const days = [];
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
-      const dayName = date.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' });
-      const isToday = dateStr === new Date().toISOString().split('T')[0];
-      days.push(`
-        <button class="day-btn ${isToday ? 'today' : ''}" data-date="${dateStr}">
-          ${dayName}
-          ${isToday ? '<span class="day-badge">Today</span>' : ''}
-        </button>
-      `);
+  _css() {
+    return `
+  /* ── Tokens: dark (default) ─────────────────────────────── */
+  :root {
+    --bg:        #0B1823;
+    --strip:     #0F2236;
+    --amber:     #CF9010;
+    --amber-h:   #E8A81A;
+    --ink:       #E4E0D8;
+    --ink-2:     #6898BC;
+    --mist:      #3A5E7E;
+    --rule:      #172E46;
+    --card-bd:   rgba(255,255,255,0.07);
+    --card-sh:   0 2px 10px rgba(0,0,0,0.35);
+    --card-sh-h: 0 10px 30px rgba(0,0,0,0.55);
+    --cat-bg:    transparent;
+    --cat-bd:    transparent;
+  }
+
+  /* ── Tokens: light ──────────────────────────────────────── */
+  :root[data-theme="light"] {
+    --bg:        #E8EEF6;
+    --strip:     #FFFFFF;
+    --amber:     #B87809;
+    --amber-h:   #D4940E;
+    --ink:       #1A2535;
+    --ink-2:     #3D5168;
+    --mist:      #8BA3BA;
+    --rule:      #CDD6E6;
+    --card-bd:   #CDD6E6;
+    --card-sh:   0 1px 4px rgba(0,0,0,0.06);
+    --card-sh-h: 0 6px 22px rgba(0,0,0,0.1);
+    --cat-bg:    var(--bg);
+    --cat-bd:    var(--rule);
+  }
+
+  /* ── Reset ──────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    transition: background 0.25s, color 0.25s;
+  }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  button:focus-visible, a:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .site-header {
+    background: var(--strip);
+    border-bottom: 1px solid var(--rule);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .header-brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand-city {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  .brand-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .week-label {
+    font-size: 13px;
+    color: var(--ink-2);
+    white-space: nowrap;
+    display: none;
+  }
+  @media (min-width: 580px) { .week-label { display: block; } }
+  .theme-toggle {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--mist);
+    padding: 5px 10px;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .theme-toggle:hover { border-color: var(--amber); color: var(--amber); }
+
+  /* ── Day strip ──────────────────────────────────────────── */
+  .day-strip {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--strip);
+    border-bottom: 2px solid var(--rule);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .day-strip::-webkit-scrollbar { display: none; }
+  .day-tabs { display: flex; min-width: max-content; }
+
+  .day-tab {
+    flex: 0 0 auto;
+    min-width: 80px;
+    padding: 12px 16px 10px;
+    text-align: center;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: border-color 0.18s;
+    user-select: none;
+  }
+  @media (min-width: 600px) { .day-tab { min-width: 94px; padding: 12px 20px 10px; } }
+  .week-tab { min-width: 96px; border-right: 1px solid var(--rule); }
+  @media (min-width: 600px) { .week-tab { min-width: 110px; } }
+  .day-tab:hover .tab-num { color: var(--amber-h); }
+  .day-tab.active { border-bottom-color: var(--amber); }
+  .day-tab.active .tab-num  { color: var(--amber); }
+  .day-tab.active .tab-name { color: var(--ink-2); }
+
+  .tab-name {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--mist);
+    margin-bottom: 2px;
+    transition: color 0.18s;
+  }
+  .tab-num {
+    display: block;
+    font-family: Georgia, serif;
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1;
+    color: var(--ink-2);
+    transition: color 0.18s;
+  }
+  .tab-count {
+    display: block;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 10px;
+    color: var(--mist);
+    margin-top: 3px;
+  }
+
+  /* ── Category strip ─────────────────────────────────────── */
+  .cat-strip {
+    background: var(--cat-bg);
+    border-bottom: 1px solid var(--cat-bd);
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    padding: 12px 20px;
+    transition: background 0.25s;
+  }
+  .cat-strip::-webkit-scrollbar { display: none; }
+  .cat-pills { display: flex; gap: 7px; min-width: max-content; }
+  .cat-pill {
+    padding: 5px 14px;
+    border: 1.5px solid var(--rule);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--ink-2);
+    white-space: nowrap;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+  .cat-pill:hover { border-color: var(--ink-2); color: var(--ink); }
+  .cat-pill.active { background: var(--amber); border-color: var(--amber); color: #fff; }
+
+  /* ── Main ───────────────────────────────────────────────── */
+  .main { max-width: 1240px; margin: 0 auto; padding: 26px 18px 64px; }
+  @media (min-width: 640px) { .main { padding: 30px 26px 72px; } }
+
+  .day-heading { display: flex; align-items: baseline; gap: 12px; margin-bottom: 22px; }
+  .day-heading h2 { font-family: Georgia, serif; font-size: 24px; font-weight: bold; color: var(--ink); }
+  .tally { font-family: "Courier New", monospace; font-size: 13px; color: var(--ink-2); }
+
+  /* ── Grid ───────────────────────────────────────────────── */
+  .events-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+  @media (min-width: 620px)  { .events-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 980px)  { .events-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ── Card — always white ────────────────────────────────── */
+  .event-card {
+    background: #FFFFFF;
+    border-radius: 10px;
+    border: 1px solid var(--card-bd);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--card-sh);
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .event-card:hover {
+      box-shadow: var(--card-sh-h);
+      border-color: rgba(255,255,255,0.18);
+      transform: translateY(-2px);
     }
-    return days.join('');
   }
 
-  generateCategoryButtons(type) {
-    const categories = type === 'main' ? this.mainCategories : this.additionalCategories;
-    return categories.map(cat => `
-      <button class="category-btn" data-category="${cat}" style="--cat-color: ${this.categoryColors[cat]};">
-        ${cat}
-      </button>
-    `).join('');
+  .card-img {
+    position: relative;
+    width: 100%;
+    padding-top: 54%;
+    overflow: hidden;
+  }
+  .card-img > * { position: absolute; }
+  .card-img img {
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .card-time-badge {
+    bottom: 10px; left: 12px;
+    background: rgba(10,22,38,0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #E8E4DC;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 0.03em;
+    padding: 4px 9px;
+    border-radius: 5px;
+  }
+  .card-status-badge {
+    top: 10px; left: 10px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 4px;
+    color: #fff;
   }
 
-  generateEventCards(events) {
-    return events.map(event => this.generateEventCard(event)).join('');
+  .card-body { padding: 14px 15px 2px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
+  .card-cat  { font-size: 10px; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; }
+  .card-title { font-family: Georgia, serif; font-size: 17px; font-weight: bold; line-height: 1.3; color: #1A2535; text-wrap: balance; }
+  .card-venue { font-size: 13px; color: #3D5168; }
+  .card-price { font-family: "Courier New", monospace; font-size: 11.5px; color: #8BA3BA; }
+  .card-desc  {
+    font-size: 13px; line-height: 1.55; color: #3D5168; flex: 1;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+
+  .card-footer { padding: 10px 15px 13px; }
+  .card-cta {
+    display: block; text-align: center;
+    padding: 9px 14px;
+    background: var(--amber); color: #fff;
+    border-radius: 7px; font-size: 13.5px; font-weight: 600;
+    transition: background 0.15s; width: 100%;
+  }
+  .card-cta:hover { background: var(--amber-h); }
+  .card-cta.unavailable { background: #8BA3BA; opacity: 0.65; cursor: not-allowed; pointer-events: none; }
+
+  /* ── Week-view sections ─────────────────────────────────── */
+  .week-section { margin-bottom: 52px; }
+  .week-section:last-child { margin-bottom: 0; }
+  .week-section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .week-section-header h2 { font-family: Georgia, serif; font-size: 22px; font-weight: bold; color: var(--ink); }
+  .week-section-header .tally { font-family: "Courier New", monospace; font-size: 13px; color: var(--ink-2); }
+
+  /* ── No events ──────────────────────────────────────────── */
+  .no-events { grid-column: 1 / -1; text-align: center; padding: 52px 24px; }
+  .no-events-title { font-family: Georgia, serif; font-size: 19px; color: var(--ink-2); margin-bottom: 8px; }
+  .no-events-sub   { font-size: 14px; color: var(--mist); }
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  .site-footer {
+    background: var(--strip);
+    border-top: 1px solid var(--rule);
+    padding: 16px 24px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--mist);
+    line-height: 1.65;
+    transition: background 0.25s;
+  }
+  .site-footer strong { color: var(--ink-2); font-weight: 600; }
+    `;
+  }
+
+  _buildScript() {
+    /* All browser-side JS. No ES6 template literals here — string concatenation only,
+       so this method's own template literal needs no escaping. */
+    return `
+// ── Category colours & gradients ──────────────────────────────
+var CC = {
+  Concert:'#1D6FBF', Festival:'#7B2FBE', Theatre:'#B03060',
+  Sports:'#1A7A4A', Art:'#C03A1D', Food:'#B06010',
+  Family:'#0891B2', Nightlife:'#1E2A3A', Conference:'#5C6B7A',
+  Tour:'#7B5E2A', Market:'#6B7A2A', Other:'#6B7280'
+};
+var CG = {
+  Concert:   'linear-gradient(150deg,#04111E 0%,#0A2548 100%)',
+  Festival:  'linear-gradient(150deg,#120618 0%,#34105A 100%)',
+  Theatre:   'linear-gradient(150deg,#1C0612 0%,#580A2A 100%)',
+  Sports:    'linear-gradient(150deg,#021008 0%,#073420 100%)',
+  Art:       'linear-gradient(150deg,#1C0400 0%,#5A0E00 100%)',
+  Food:      'linear-gradient(150deg,#130A00 0%,#4E2400 100%)',
+  Family:    'linear-gradient(150deg,#020C18 0%,#034558 100%)',
+  Nightlife: 'linear-gradient(150deg,#040406 0%,#0C0E16 100%)',
+  Conference:'linear-gradient(150deg,#08101A 0%,#1A2A38 100%)',
+  Tour:      'linear-gradient(150deg,#0A0602 0%,#2A1A06 100%)',
+  Market:    'linear-gradient(150deg,#060A02 0%,#1A2A06 100%)',
+  Other:     'linear-gradient(150deg,#0C0C0E 0%,#1C1C24 100%)'
+};
+
+// ── SVG illustrations ─────────────────────────────────────────
+var _sa = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%"';
+var ILLUS = {
+  Concert:
+    '<svg ' + _sa + '>' +
+    '<rect x="18" y="32" width="13" height="36" rx="3" fill="rgba(255,255,255,.22)"/>' +
+    '<rect x="38" y="16" width="13" height="68" rx="3" fill="rgba(255,255,255,.27)"/>' +
+    '<rect x="58" y="24" width="13" height="52" rx="3" fill="rgba(255,255,255,.22)"/>' +
+    '<rect x="78" y="8"  width="13" height="84" rx="3" fill="rgba(255,255,255,.31)"/>' +
+    '<rect x="98" y="19" width="13" height="62" rx="3" fill="rgba(255,255,255,.22)"/>' +
+    '<rect x="118" y="12" width="13" height="76" rx="3" fill="rgba(255,255,255,.27)"/>' +
+    '<rect x="138" y="28" width="13" height="44" rx="3" fill="rgba(255,255,255,.22)"/>' +
+    '<rect x="158" y="38" width="13" height="24" rx="3" fill="rgba(255,255,255,.17)"/>' +
+    '</svg>',
+  Festival:
+    '<svg ' + _sa + '>' +
+    '<g transform="translate(100,50)" stroke="rgba(255,255,255,.22)" stroke-width="2.5" stroke-linecap="round">' +
+    '<line x1="0" y1="-42" x2="0" y2="-14"/>' +
+    '<line x1="0" y1="14" x2="0" y2="42"/>' +
+    '<line x1="-42" y1="0" x2="-14" y2="0"/>' +
+    '<line x1="14" y1="0" x2="42" y2="0"/>' +
+    '<line x1="-30" y1="-30" x2="-10" y2="-10"/>' +
+    '<line x1="10" y1="10" x2="30" y2="30"/>' +
+    '<line x1="30" y1="-30" x2="10" y2="-10"/>' +
+    '<line x1="-10" y1="10" x2="-30" y2="30"/>' +
+    '</g>' +
+    '<circle cx="100" cy="50" r="9" fill="rgba(255,255,255,.3)"/>' +
+    '<circle cx="100" cy="8"  r="3" fill="rgba(255,255,255,.38)"/>' +
+    '<circle cx="100" cy="92" r="3" fill="rgba(255,255,255,.38)"/>' +
+    '<circle cx="58"  cy="50" r="3" fill="rgba(255,255,255,.38)"/>' +
+    '<circle cx="142" cy="50" r="3" fill="rgba(255,255,255,.38)"/>' +
+    '<circle cx="71"  cy="21" r="2.5" fill="rgba(255,255,255,.32)"/>' +
+    '<circle cx="129" cy="79" r="2.5" fill="rgba(255,255,255,.32)"/>' +
+    '<circle cx="129" cy="21" r="2.5" fill="rgba(255,255,255,.32)"/>' +
+    '<circle cx="71"  cy="79" r="2.5" fill="rgba(255,255,255,.32)"/>' +
+    '</svg>',
+  Theatre:
+    '<svg ' + _sa + '>' +
+    '<rect x="0" y="0" width="200" height="11" fill="rgba(255,255,255,.2)"/>' +
+    '<path d="M0,0 Q58,52 14,100 L0,100 Z"      fill="rgba(255,255,255,.14)"/>' +
+    '<path d="M200,0 Q142,52 186,100 L200,100 Z" fill="rgba(255,255,255,.14)"/>' +
+    '<path d="M100,11 L62,100 L138,100 Z"         fill="rgba(255,255,255,.06)"/>' +
+    '<circle cx="100" cy="5.5" r="5" fill="rgba(255,255,255,.35)"/>' +
+    '</svg>',
+  Sports:
+    '<svg ' + _sa + '>' +
+    '<line x1="52" y1="14" x2="52" y2="88" stroke="rgba(255,255,255,.28)" stroke-width="5" stroke-linecap="round"/>' +
+    '<line x1="148" y1="14" x2="148" y2="88" stroke="rgba(255,255,255,.28)" stroke-width="5" stroke-linecap="round"/>' +
+    '<line x1="52" y1="14" x2="148" y2="14" stroke="rgba(255,255,255,.28)" stroke-width="5" stroke-linecap="round"/>' +
+    '<line x1="52" y1="26" x2="72"  y2="88" stroke="rgba(255,255,255,.1)"  stroke-width="1.5"/>' +
+    '<line x1="52" y1="44" x2="90"  y2="88" stroke="rgba(255,255,255,.1)"  stroke-width="1.5"/>' +
+    '<line x1="52" y1="62" x2="108" y2="88" stroke="rgba(255,255,255,.1)"  stroke-width="1.5"/>' +
+    '<line x1="52" y1="80" x2="126" y2="88" stroke="rgba(255,255,255,.1)"  stroke-width="1.5"/>' +
+    '<line x1="72"  y1="14" x2="140" y2="88" stroke="rgba(255,255,255,.1)" stroke-width="1.5"/>' +
+    '<line x1="92"  y1="14" x2="148" y2="70" stroke="rgba(255,255,255,.1)" stroke-width="1.5"/>' +
+    '<line x1="112" y1="14" x2="148" y2="52" stroke="rgba(255,255,255,.1)" stroke-width="1.5"/>' +
+    '<line x1="132" y1="14" x2="148" y2="32" stroke="rgba(255,255,255,.1)" stroke-width="1.5"/>' +
+    '</svg>',
+  Art:
+    '<svg ' + _sa + '>' +
+    '<path d="M15,72 Q70,18 185,38"  stroke="rgba(255,255,255,.26)" stroke-width="13" fill="none" stroke-linecap="round"/>' +
+    '<path d="M10,86 Q85,60 180,78"  stroke="rgba(255,255,255,.14)" stroke-width="8"  fill="none" stroke-linecap="round"/>' +
+    '<path d="M25,55 Q100,8 190,28"  stroke="rgba(255,255,255,.11)" stroke-width="5"  fill="none" stroke-linecap="round"/>' +
+    '</svg>',
+  Food:
+    '<svg ' + _sa + '>' +
+    '<line x1="77" y1="10" x2="77" y2="38" stroke="rgba(255,255,255,.25)" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="84" y1="10" x2="84" y2="38" stroke="rgba(255,255,255,.25)" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="91" y1="10" x2="91" y2="38" stroke="rgba(255,255,255,.25)" stroke-width="2.5" stroke-linecap="round"/>' +
+    '<path d="M77,38 Q84,50 91,38" stroke="rgba(255,255,255,.22)" stroke-width="2" fill="none"/>' +
+    '<line x1="84" y1="48" x2="84" y2="90" stroke="rgba(255,255,255,.28)" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<line x1="116" y1="10" x2="116" y2="90" stroke="rgba(255,255,255,.28)" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<path d="M116,10 C124,22 126,38 116,50" stroke="rgba(255,255,255,.18)" stroke-width="2" fill="rgba(255,255,255,.1)"/>' +
+    '</svg>',
+  Family:
+    '<svg ' + _sa + '>' +
+    '<circle cx="70"  cy="26" r="13" fill="rgba(255,255,255,.24)"/>' +
+    '<rect   x="57"  y="42" width="26" height="46" rx="11" fill="rgba(255,255,255,.18)"/>' +
+    '<circle cx="130" cy="26" r="13" fill="rgba(255,255,255,.24)"/>' +
+    '<rect   x="117" y="42" width="26" height="46" rx="11" fill="rgba(255,255,255,.18)"/>' +
+    '<circle cx="100" cy="40" r="9"  fill="rgba(255,255,255,.28)"/>' +
+    '<rect   x="91"  y="52" width="18" height="33" rx="8"  fill="rgba(255,255,255,.2)"/>' +
+    '</svg>',
+  Nightlife:
+    '<svg ' + _sa + '>' +
+    '<rect x="0"   y="62" width="26" height="38" fill="rgba(255,255,255,.13)"/>' +
+    '<rect x="24"  y="44" width="18" height="56" fill="rgba(255,255,255,.17)"/>' +
+    '<rect x="40"  y="58" width="14" height="42" fill="rgba(255,255,255,.13)"/>' +
+    '<rect x="52"  y="32" width="22" height="68" fill="rgba(255,255,255,.2)"/>' +
+    '<rect x="72"  y="52" width="16" height="48" fill="rgba(255,255,255,.14)"/>' +
+    '<rect x="86"  y="20" width="20" height="80" fill="rgba(255,255,255,.23)"/>' +
+    '<rect x="104" y="46" width="15" height="54" fill="rgba(255,255,255,.15)"/>' +
+    '<rect x="117" y="36" width="18" height="64" fill="rgba(255,255,255,.17)"/>' +
+    '<rect x="133" y="55" width="13" height="45" fill="rgba(255,255,255,.13)"/>' +
+    '<rect x="144" y="42" width="16" height="58" fill="rgba(255,255,255,.15)"/>' +
+    '<rect x="158" y="60" width="20" height="40" fill="rgba(255,255,255,.13)"/>' +
+    '<rect x="176" y="48" width="24" height="52" fill="rgba(255,255,255,.14)"/>' +
+    '<path d="M152,22 A12,12 0 1,1 162,10 A9,9 0 1,0 152,22 Z" fill="rgba(255,255,255,.22)"/>' +
+    '</svg>',
+  Conference:
+    '<svg ' + _sa + '>' +
+    '<rect x="38" y="10" width="124" height="68" rx="4" stroke="rgba(255,255,255,.22)" stroke-width="3" fill="rgba(255,255,255,.05)"/>' +
+    '<line x1="52" y1="28" x2="148" y2="28" stroke="rgba(255,255,255,.2)"  stroke-width="2.5" stroke-linecap="round"/>' +
+    '<line x1="52" y1="42" x2="122" y2="42" stroke="rgba(255,255,255,.16)" stroke-width="2"   stroke-linecap="round"/>' +
+    '<line x1="52" y1="54" x2="132" y2="54" stroke="rgba(255,255,255,.16)" stroke-width="2"   stroke-linecap="round"/>' +
+    '<line x1="52" y1="66" x2="108" y2="66" stroke="rgba(255,255,255,.16)" stroke-width="2"   stroke-linecap="round"/>' +
+    '<line x1="100" y1="78" x2="100" y2="92" stroke="rgba(255,255,255,.2)" stroke-width="3"   stroke-linecap="round"/>' +
+    '<line x1="76"  y1="92" x2="124" y2="92" stroke="rgba(255,255,255,.2)" stroke-width="3"   stroke-linecap="round"/>' +
+    '</svg>',
+  Other:
+    '<svg ' + _sa + '>' +
+    '<path d="M100,6 L58,96 L142,96 Z" fill="rgba(255,255,255,.07)"/>' +
+    '<circle cx="100" cy="6" r="7" fill="rgba(255,255,255,.3)"/>' +
+    '<ellipse cx="100" cy="96" rx="38" ry="5.5" stroke="rgba(255,255,255,.16)" stroke-width="1.5" fill="none"/>' +
+    '<ellipse cx="100" cy="96" rx="22" ry="3.5" stroke="rgba(255,255,255,.12)" stroke-width="1.5" fill="none"/>' +
+    '</svg>'
+};
+
+// ── State & helpers ────────────────────────────────────────────
+var activeDay = 'week';
+var activeCat = null;
+
+function todayKey() { return new Date().toISOString().split('T')[0]; }
+function dateKey(iso) { return iso ? iso.split('T')[0] : ''; }
+function safe(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtTime(iso) {
+  if (!iso) return 'Time TBA';
+  var d = new Date(iso);
+  return isNaN(d.getTime()) ? 'Time TBA' : d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDay(d) {
+  return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+}
+
+var DAYS = (function() {
+  var arr = [];
+  for (var i = 0; i < 7; i++) {
+    var d = new Date();
+    d.setDate(d.getDate() + i);
+    var key = d.toISOString().split('T')[0];
+    arr.push({ key: key, date: d, count: EVENTS.filter(function(e) { return dateKey(e.date) === key; }).length });
+  }
+  return arr;
+})();
+
+// ── Week label ─────────────────────────────────────────────────
+(function() {
+  var s = DAYS[0].date, e = DAYS[6].date;
+  function mo(d) { return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+  document.getElementById('weekLabel').textContent = mo(s) + ' - ' + mo(e) + ' ' + s.getFullYear();
+})();
+
+// ── Renders ────────────────────────────────────────────────────
+function renderDayTabs() {
+  var el = document.getElementById('dayTabs');
+  var weekTotal = activeCat
+    ? EVENTS.filter(function(e) { return e.category === activeCat; }).length
+    : EVENTS.length;
+  var weekActive = activeDay === 'week';
+  var html = '<button class="day-tab week-tab' + (weekActive ? ' active' : '') + '" data-key="week" aria-pressed="' + weekActive + '">' +
+    '<span class="tab-name">This Week</span>' +
+    '<span class="tab-num">' + weekTotal + '</span>' +
+    '<span class="tab-count">all 7 days</span>' +
+    '</button>';
+  DAYS.forEach(function(d) {
+    var nm = d.date.toLocaleDateString('en-GB',{weekday:'short'}).toUpperCase().replace('.','');
+    var active = d.key === activeDay;
+    var c = d.count === 0 ? '-' : d.count + (d.count === 1 ? ' event' : ' events');
+    html += '<button class="day-tab' + (active ? ' active' : '') + '" data-key="' + d.key + '" aria-pressed="' + active + '">' +
+      '<span class="tab-name">' + nm + '</span>' +
+      '<span class="tab-num">' + d.date.getDate() + '</span>' +
+      '<span class="tab-count">' + c + '</span>' +
+      '</button>';
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('.day-tab').forEach(function(b) {
+    b.addEventListener('click', function() {
+      activeDay = b.dataset.key;
+      activeCat = null;
+      renderAll();
+    });
+  });
+}
+
+var CATS = ['All','Concert','Festival','Theatre','Art','Food','Nightlife','Sports','Family','Conference','Tour','Market','Other'];
+function renderCatPills() {
+  var el = document.getElementById('catPills');
+  el.innerHTML = CATS.map(function(c) {
+    var active = c === 'All' ? !activeCat : activeCat === c;
+    return '<button class="cat-pill' + (active ? ' active' : '') + '" data-cat="' + c + '">' + c + '</button>';
+  }).join('');
+  el.querySelectorAll('.cat-pill').forEach(function(b) {
+    b.addEventListener('click', function() {
+      activeCat = b.dataset.cat === 'All' ? null : b.dataset.cat;
+      renderAll();
+    });
+  });
+}
+
+function renderCard(ev) {
+  var cat = ev.category || 'Other';
+  var color = CC[cat] || CC.Other;
+  var grad  = CG[cat] || CG.Other;
+  var illus = ILLUS[cat] || ILLUS.Other;
+  var SL = {cancelled:'Cancelled',sold_out:'Sold Out',postponed:'Postponed',rescheduled:'Rescheduled'};
+  var SB = {cancelled:'#A01818',sold_out:'#B05010',postponed:'#4C5A68',rescheduled:'#5A2880'};
+  var badge = ev.status ? '<span class="card-status-badge" style="background:' + (SB[ev.status]||'#777') + '">' + (SL[ev.status]||ev.status) + '</span>' : '';
+  var isUnavail = ev.status === 'cancelled' || ev.status === 'sold_out';
+  var ctaLabel = ev.status === 'cancelled' ? 'Cancelled' : ev.status === 'sold_out' ? 'Sold Out' : 'Get Tickets';
+  var cta = isUnavail
+    ? '<span class="card-cta unavailable">' + ctaLabel + '</span>'
+    : '<a href="' + safe(ev.url) + '" target="_blank" rel="noopener noreferrer" class="card-cta">' + ctaLabel + '</a>';
+
+  var imgHtml = ev.image
+    ? '<img src="' + safe(ev.image) + '" alt="' + safe(ev.name) + '" loading="lazy"/>'
+    : illus;
+
+  var desc = ev.description || '';
+
+  return '<article class="event-card">' +
+    '<div class="card-img" style="background:' + grad + ';">' +
+      imgHtml + badge +
+      '<span class="card-time-badge">' + safe(fmtTime(ev.date)) + '</span>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<span class="card-cat" style="color:' + color + '">' + safe(cat) + '</span>' +
+      '<h3 class="card-title">' + safe(ev.name) + '</h3>' +
+      '<span class="card-venue">' + safe(ev.venue || 'Venue TBA') + '</span>' +
+      '<span class="card-price">' + safe(ev.cost || 'Price TBA') + '</span>' +
+      (desc ? '<p class="card-desc">' + safe(desc) + '</p>' : '') +
+    '</div>' +
+    '<div class="card-footer">' + cta + '</div>' +
+    '</article>';
+}
+
+function renderWeekView() {
+  var grid = document.getElementById('eventsGrid');
+  document.getElementById('topHeading').style.display = 'none';
+  grid.className = '';
+
+  var sections = DAYS.map(function(d) {
+    var ev = EVENTS.filter(function(e) { return dateKey(e.date) === d.key; });
+    if (activeCat) ev = ev.filter(function(e) { return e.category === activeCat; });
+    ev.sort(function(a,b) { return new Date(a.date) - new Date(b.date); });
+    return { key: d.key, date: d.date, events: ev };
+  }).filter(function(s) { return s.events.length > 0; });
+
+  if (!sections.length) {
+    var hint = activeCat
+      ? 'No ' + activeCat + ' events this week.'
+      : 'No events found for this week.';
+    grid.innerHTML = '<div class="no-events"><p class="no-events-title">Nothing to show.</p><p class="no-events-sub">' + hint + '</p></div>';
+    return;
+  }
+
+  grid.innerHTML = sections.map(function(s) {
+    var label = s.key === todayKey() ? 'Today' : fmtDay(s.date);
+    var c = s.events.length;
+    return '<div class="week-section">' +
+      '<div class="week-section-header">' +
+        '<h2>' + safe(label) + '</h2>' +
+        '<span class="tally">' + c + ' event' + (c === 1 ? '' : 's') + '</span>' +
+      '</div>' +
+      '<div class="events-grid">' + s.events.map(renderCard).join('') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function renderEvents() {
+  if (activeDay === 'week') { renderWeekView(); return; }
+
+  var grid = document.getElementById('eventsGrid');
+  var h2   = document.getElementById('dayHeading');
+  var tally = document.getElementById('tally');
+  document.getElementById('topHeading').style.display = '';
+  grid.className = 'events-grid';
+
+  var ev = EVENTS.filter(function(e) { return dateKey(e.date) === activeDay; });
+  if (activeCat) ev = ev.filter(function(e) { return e.category === activeCat; });
+  ev.sort(function(a,b) { return new Date(a.date) - new Date(b.date); });
+
+  var day = DAYS.find ? DAYS.find(function(d) { return d.key === activeDay; }) : null;
+  if (!day) { for (var i = 0; i < DAYS.length; i++) { if (DAYS[i].key === activeDay) { day = DAYS[i]; break; } } }
+  h2.textContent = activeDay === todayKey() ? 'Today' : (day ? fmtDay(day.date) : '');
+  tally.textContent = ev.length ? ev.length + (ev.length === 1 ? ' event' : ' events') : '';
+
+  if (!ev.length) {
+    var dt = EVENTS.filter(function(e) { return dateKey(e.date) === activeDay; }).length;
+    var hint = dt && activeCat
+      ? 'There are ' + dt + ' other event' + (dt === 1 ? '' : 's') + ' this day.'
+      : 'Try a different day or category.';
+    grid.innerHTML = '<div class="no-events"><p class="no-events-title">Nothing here' + (activeCat ? ' for ' + activeCat : '') + '.</p><p class="no-events-sub">' + hint + '</p></div>';
+    return;
+  }
+  grid.innerHTML = ev.map(renderCard).join('');
+}
+
+function renderAll() { renderDayTabs(); renderCatPills(); renderEvents(); }
+
+// ── Theme ──────────────────────────────────────────────────────
+var theme = 'dark';
+function applyTheme(t) {
+  theme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').textContent = t === 'dark' ? 'Light' : 'Dark';
+}
+document.getElementById('themeBtn').addEventListener('click', function() {
+  applyTheme(theme === 'dark' ? 'light' : 'dark');
+});
+applyTheme('dark');
+
+// ── Init ───────────────────────────────────────────────────────
+renderAll();
+    `;
   }
 
   renderEvent(event) {
-    return this.generateEventCard(event);
-  }
-
-  generateEventCard(event) {
-    const categoryColor = this.categoryColors[event.category] || '#7F8C8D';
-    const imageHtml = event.image ? `<img src="${event.image}" alt="${event.name}" class="event-image">` : `<div class="event-image" style="background: linear-gradient(135deg, ${categoryColor} 0%, ${this.darkenColor(categoryColor)} 100%);"></div>`;
-    const timeDisplay = event.date ? new Date(event.date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Date TBA';
-    const status = event.status || null;
-    const statusLabels = { cancelled: 'Cancelled', sold_out: 'Sold Out', postponed: 'Postponed', rescheduled: 'Rescheduled', off_sale: 'Off Sale' };
-    const statusBanner = status ? `<div class="status-banner status-${status}">${statusLabels[status] || status}</div>` : '';
-    const cardClass = status ? ` is-${status}` : '';
-    const learnMoreBtn = status === 'cancelled'
-      ? `<span class="btn btn-primary" style="cursor:default;">Cancelled</span>`
+    var name = event.name || '';
+    var venue = event.venue || 'Venue TBA';
+    var category = event.category || 'Other';
+    var cost = event.cost || '';
+    var description = event.description
+      ? (event.description.length > 150 ? event.description.substring(0, 150) + '...' : event.description)
+      : '';
+    var timeStr = event.date
+      ? (function() {
+          try {
+            var d = new Date(event.date);
+            return isNaN(d.getTime()) ? 'Date TBA' : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+          } catch (e) {
+            return 'Date TBA';
+          }
+        }())
+      : 'Date TBA';
+    var status = event.status || null;
+    var url = event.url || '#';
+    var cta = status === 'cancelled'
+      ? '<span class="card-cta unavailable">Cancelled</span>'
       : status === 'sold_out'
-        ? `<span class="btn btn-primary" style="cursor:default;">Sold Out</span>`
-        : `<a href="${event.url}" target="_blank" class="btn btn-primary">Learn More</a>`;
+        ? '<span class="card-cta unavailable">Sold Out</span>'
+        : '<a href="' + url + '" target="_blank" class="card-cta">Get Tickets</a>';
 
-    return `
-      <div class="event-card-wrapper" style="position:relative;">
-        ${statusBanner}
-        <div class="event-card${cardClass}">
-          ${imageHtml}
-          <div class="event-content">
-            <div class="event-header">
-              <div class="event-time">🕐 ${timeDisplay}</div>
-              <span class="event-category" style="background-color: ${categoryColor};">${event.category || 'Other'}</span>
-            </div>
-            <div class="event-name">${event.name}</div>
-            <div class="event-meta">
-              <div class="event-meta-item">📍 ${event.venue || 'Venue TBA'}</div>
-              ${event.cost ? `<div class="event-meta-item">💷 ${event.cost}</div>` : ''}
-            </div>
-            ${event.description ? `<div class="event-description">${event.description.substring(0, 150)}${event.description.length > 150 ? '...' : ''}</div>` : ''}
-            <div class="event-actions">
-              ${learnMoreBtn}
-              <button class="btn btn-secondary" onclick="addEventToCalendar(${JSON.stringify(event).replace(/"/g, '&quot;')})">📅 Add to Calendar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    return '<article class="event-card">' +
+      '<div class="card-img">' +
+        '<span class="card-time-badge">' + timeStr + '</span>' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<span class="card-cat">' + category + '</span>' +
+        '<h3 class="card-title">' + name + '</h3>' +
+        '<span class="card-venue">' + venue + '</span>' +
+        (cost ? '<span class="card-price">' + cost + '</span>' : '') +
+        (description ? '<p class="card-desc">' + description + '</p>' : '') +
+      '</div>' +
+      '<div class="card-footer">' + cta + '</div>' +
+      '</article>';
   }
 
-  darkenColor(color) {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * -20);
-    return "#" + (0x1000000 + (Math.max(0, Math.min(255, (num >> 16) + amt)) << 16) +
-      (Math.max(0, Math.min(255, (num >> 8 & 0x00FF) + amt)) << 8) +
-      Math.max(0, Math.min(255, (num & 0x0000FF) + amt))).toString(16).slice(1);
-  }
+  generateEventCard(event) { return this.renderEvent(event); }
+  generateEventCards(events) { return events.map(e => this.renderEvent(e)).join(''); }
 }
 
 module.exports = HtmlGenerator;
-
