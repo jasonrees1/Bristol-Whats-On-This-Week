@@ -362,8 +362,50 @@ ${this._buildScript()}
     color: var(--mist);
     line-height: 1.65;
     transition: background 0.25s;
+    /* iOS home-bar clearance */
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
   }
   .site-footer strong { color: var(--ink-2); font-weight: 600; }
+
+  /* ── Mobile & touch optimisation ───────────────────────── */
+  /* Remove tap flash on iOS */
+  * { -webkit-tap-highlight-color: transparent; }
+  /* Prevent accidental horizontal page scroll */
+  html, body { overflow-x: hidden; }
+
+  /* Minimum 36–44 px touch targets */
+  .cat-pill {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .card-cta {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .theme-toggle { min-height: 36px; min-width: 44px; }
+
+  /* Guard against very long event names causing layout breaks */
+  .card-title { overflow-wrap: break-word; }
+  .card-venue { overflow-wrap: break-word; white-space: normal; }
+
+  /* Very small screens: iPhone SE 2nd gen (375 px), budget Androids (360 px) */
+  @media (max-width: 380px) {
+    .site-header  { height: 50px; padding: 0 14px; }
+    .brand-title  { font-size: 17px; }
+    .day-tab      { min-width: 68px; padding: 10px 12px 8px; }
+    .tab-num      { font-size: 26px; }
+    .cat-strip    { padding: 10px 14px; }
+    .cat-pill     { font-size: 12px; padding: 5px 10px; }
+    .main         { padding: 16px 12px 52px; }
+    .day-heading h2             { font-size: 20px; }
+    .week-section-header h2     { font-size: 19px; }
+    .card-title                 { font-size: 15px; }
+    .card-body                  { padding: 12px 13px 2px; }
+    .card-footer                { padding: 8px 13px 11px; }
+  }
     `;
   }
 
@@ -514,6 +556,7 @@ var ILLUS = {
 // ── State & helpers ────────────────────────────────────────────
 var activeDay = 'week';
 var activeCat = null;
+var userInteracted = false;
 
 function todayKey() { return new Date().toISOString().split('T')[0]; }
 function dateKey(iso) { return iso ? iso.split('T')[0] : ''; }
@@ -528,6 +571,13 @@ function fmtTime(iso) {
 }
 function fmtDay(d) {
   return d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+}
+
+// After a user-initiated tab or category switch, scroll back to the top so
+// they see the fresh set of events from the beginning rather than mid-list.
+function scrollToMain() {
+  if (!userInteracted) return;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 var DAYS = (function() {
@@ -573,6 +623,7 @@ function renderDayTabs() {
   el.innerHTML = html;
   el.querySelectorAll('.day-tab').forEach(function(b) {
     b.addEventListener('click', function() {
+      userInteracted = true;
       activeDay = b.dataset.key;
       activeCat = null;
       renderAll();
@@ -589,6 +640,7 @@ function renderCatPills() {
   }).join('');
   el.querySelectorAll('.cat-pill').forEach(function(b) {
     b.addEventListener('click', function() {
+      userInteracted = true;
       activeCat = b.dataset.cat === 'All' ? null : b.dataset.cat;
       renderAll();
     });
@@ -693,7 +745,7 @@ function renderEvents() {
   grid.innerHTML = ev.map(renderCard).join('');
 }
 
-function renderAll() { renderDayTabs(); renderCatPills(); renderEvents(); }
+function renderAll() { renderDayTabs(); renderCatPills(); renderEvents(); scrollToMain(); }
 
 // ── Theme ──────────────────────────────────────────────────────
 var theme = 'dark';
