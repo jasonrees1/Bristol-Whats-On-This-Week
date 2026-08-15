@@ -1,7 +1,8 @@
 const EventFetcher = require('./fetchers/eventFetcher');
 const ArnolfiniFetcher = require('./fetchers/arnolfiniFetcher');
-const Ents24Fetcher = require('./fetchers/ents24Fetcher');
 const { HeadfirstFetcher } = require('./fetchers/headfirstFetcher');
+const { HippodromeFetcher } = require('./fetchers/hippodromeFetcher');
+const { OldVicFetcher } = require('./fetchers/oldVicFetcher');
 const { StGeorgesFetcher } = require('./fetchers/stGeorgesFetcher');
 const { WatershedFetcher } = require('./fetchers/watershedFetcher');
 const { WethecuriousFetcher } = require('./fetchers/wethecuriousFetcher');
@@ -17,17 +18,37 @@ async function main() {
 
     const manualEvents = new ManualFetcher().fetchEvents();
 
-    const [apiEvents, arnolfiniEvents, ents24Events, headfirstEvents, stGeorgesEvents, watershedEvents, wtcEvents] = await Promise.all([
+    const [
+      apiEvents,
+      arnolfiniEvents,
+      headfirstEvents,
+      hippodromeEvents,
+      oldVicEvents,
+      stGeorgesEvents,
+      watershedEvents,
+      wtcEvents
+    ] = await Promise.all([
       new EventFetcher().fetchAll(),
       new ArnolfiniFetcher().fetchEvents(),
-      new Ents24Fetcher().fetchEvents(),
       new HeadfirstFetcher().fetchEvents(),
+      new HippodromeFetcher().fetchEvents(),
+      new OldVicFetcher().fetchEvents(),
       new StGeorgesFetcher().fetchEvents(),
       new WatershedFetcher().fetchEvents(),
       new WethecuriousFetcher().fetchEvents()
     ]);
 
-    const rawEvents = [...manualEvents, ...apiEvents, ...arnolfiniEvents, ...ents24Events, ...headfirstEvents, ...stGeorgesEvents, ...watershedEvents, ...wtcEvents];
+    const rawEvents = [
+      ...manualEvents,
+      ...apiEvents,
+      ...arnolfiniEvents,
+      ...headfirstEvents,
+      ...hippodromeEvents,
+      ...oldVicEvents,
+      ...stGeorgesEvents,
+      ...watershedEvents,
+      ...wtcEvents
+    ];
     console.log(`Fetched ${rawEvents.length} raw events`);
 
     // Process and filter events
