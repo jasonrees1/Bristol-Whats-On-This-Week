@@ -17,9 +17,9 @@ describe('ordinal', () => {
 
 describe('getDayUrl', () => {
   it('generates correct URL for a known date', () => {
-    const date = new Date('2099-08-05T12:00:00Z'); // Tuesday 5th August 2099
+    const date = new Date('2099-08-04T12:00:00Z'); // Tuesday 4th August 2099
     const url = getDayUrl(date);
-    expect(url).toBe('https://www.headfirstbristol.co.uk/whats-on/tuesday-5th-august-2099');
+    expect(url).toBe('https://www.headfirstbristol.co.uk/whats-on/tuesday-4th-august-2099');
   });
 
   it('generates correct URL for a Saturday with ordinal suffix', () => {

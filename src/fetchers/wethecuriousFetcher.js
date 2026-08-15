@@ -13,10 +13,7 @@ const DAY_PAT = 'Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tu
 
 function parseMonthStr(s) {
   const n = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-  if (MONTH_MAP[n] !== undefined) return MONTH_MAP[n];
-  if (MONTH_MAP[n.slice(0, 4)] !== undefined) return MONTH_MAP[n.slice(0, 4)]; // Sept
-  if (MONTH_MAP[n.slice(0, 3)] !== undefined) return MONTH_MAP[n.slice(0, 3)];
-  return null;
+  return MONTH_MAP[n] !== undefined ? MONTH_MAP[n] : null;
 }
 
 function parseAmPm(hourStr, minuteStr, ampm) {
