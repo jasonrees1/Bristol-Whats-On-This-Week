@@ -1,5 +1,6 @@
 const EventFetcher = require('./fetchers/eventFetcher');
 const ArnolfiniFetcher = require('./fetchers/arnolfiniFetcher');
+const { AshtonGateFetcher } = require('./fetchers/ashtonGateFetcher');
 const { HeadfirstFetcher } = require('./fetchers/headfirstFetcher');
 const { HippodromeFetcher } = require('./fetchers/hippodromeFetcher');
 const { OldVicFetcher } = require('./fetchers/oldVicFetcher');
@@ -21,6 +22,7 @@ async function main() {
     const [
       apiEvents,
       arnolfiniEvents,
+      ashtonGateEvents,
       headfirstEvents,
       hippodromeEvents,
       oldVicEvents,
@@ -30,6 +32,7 @@ async function main() {
     ] = await Promise.all([
       new EventFetcher().fetchAll(),
       new ArnolfiniFetcher().fetchEvents(),
+      new AshtonGateFetcher().fetchEvents(),
       new HeadfirstFetcher().fetchEvents(),
       new HippodromeFetcher().fetchEvents(),
       new OldVicFetcher().fetchEvents(),
@@ -40,14 +43,15 @@ async function main() {
 
     const rawEvents = [
       ...manualEvents,
-      ...apiEvents,
+      ...ashtonGateEvents,  // authoritative source for Bristol City home fixtures
       ...arnolfiniEvents,
       ...headfirstEvents,
       ...hippodromeEvents,
       ...oldVicEvents,
       ...stGeorgesEvents,
       ...watershedEvents,
-      ...wtcEvents
+      ...wtcEvents,
+      ...apiEvents,         // APIs last so official scrapers win deduplication
     ];
     console.log(`Fetched ${rawEvents.length} raw events`);
 

@@ -193,11 +193,24 @@ class EventFetcher {
         url: event.url,
         image: this.extractTicketmasterImage(event),
         status: this.extractTicketmasterStatus(event)
-      })).filter(event => event.name);
+      }))
+        .filter(event => event.name)
+        .filter(event => !this.isTicketmasterFootballFixture(event));
     } catch (error) {
       console.error('Ticketmaster API error:', error.message);
       return [];
     }
+  }
+
+  // Ticketmaster football fixture data is unreliable — opponents and dates are
+  // often wrong. We scrape ashtongatestadium.co.uk and bristolrovers.co.uk for
+  // authoritative fixture data instead.
+  isTicketmasterFootballFixture(event) {
+    const FOOTBALL_GROUNDS = ['ashton gate', 'memorial stadium'];
+    const venueLower = (event.venue || '').toLowerCase();
+    const isFootballGround = FOOTBALL_GROUNDS.some(g => venueLower.includes(g));
+    const isFixture = /\b(?:v|vs|versus)\b/i.test(event.name || '');
+    return isFootballGround && isFixture;
   }
 
   extractTicketmasterCost(event) {
