@@ -153,6 +153,16 @@ class BristolBeaconFetcher {
       });
     }
 
+    if (!events.length) {
+      const h3s = (html.match(/<h3[^>]*>[\s\S]{0,200}/g) || []).slice(0, 3);
+      const hrefs = (html.match(/href="[^"]*whats-on[^"]*"/g) || []).slice(0, 5);
+      const anyH3 = (html.match(/<h3/g) || []).length;
+      const nextData = html.includes('__NEXT_DATA__');
+      console.log(`Bristol Beacon: 0 events — h3 count: ${anyH3}, __NEXT_DATA__: ${nextData}`);
+      console.log(`Bristol Beacon: whats-on hrefs: ${hrefs.join(' | ') || 'none'}`);
+      if (h3s.length) console.log(`Bristol Beacon: first h3 snippet: ${h3s[0].replace(/\s+/g, ' ').slice(0, 120)}`);
+    }
+
     return events;
   }
 }
