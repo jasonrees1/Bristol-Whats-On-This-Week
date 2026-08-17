@@ -5,28 +5,53 @@ const NOW = new Date('2099-09-20T10:00:00Z'); // Sat 20 Sep 2099, 10 AM UTC
 const END = new Date(NOW.getTime() + 7 * 24 * 60 * 60 * 1000);
 
 // ── Helpers ────────────────────────────────────────────────────
+// Mirrors the real Bristol Beacon category-page card structure:
+// <a class="c-col-card__link" href="URL"><span class="u-hidden-visually">NAME</span></a>
+// <div class="c-event-card__image"><img data-srcset="URL 16w, URL 475w"></div>
+// <div class="c-event-card__content">
+//   <p class="...--date"><i ...></i> DATE</p>
+//   <h3 class="c-event-card__title">TITLE</h3>
+// </div>
 
-function makeCard({ slug, title, dateStr, description = '', image = 'https://bristolbeacon.org/images/test.jpg', cancelled = false }) {
+function makeCard({ slug, title, dateStr, description = '', image = 'https://images.bristolbeacon.org/images/test.jpg', cancelled = false }) {
   return `
-<div class="event-card">
-  <a href="https://bristolbeacon.org/whats-on/${slug}/">
-    <img class="event-image" src="${image}" alt="${title}">
+<div class="c-event-card">
+  <a class="c-col-card__link" href="https://bristolbeacon.org/whats-on/${slug}/">
+    <span class="u-hidden-visually">
+      ${title}
+    </span>
   </a>
-  <div class="event-details">
-    <p class="event-date">${dateStr}</p>
-    <h3><a href="https://bristolbeacon.org/whats-on/${slug}/">${title}</a></h3>
-    <p class="event-description">${description}${cancelled ? ' CANCELLED' : ''}</p>
+  <div class="c-event-card__image">
+    <img src="${image}" data-srcset="${image} 16w, ${image} 475w" alt="${title}">
+  </div>
+  <div class="c-event-card__content">
+    <div class="c-event-card__meta">
+      <p class="c-event-card__meta-label c-event-card__meta-label--date">
+        <i class="fas fa-calendar-alt" aria-hidden="true"></i> ${dateStr}${cancelled ? ' CANCELLED' : ''}
+      </p>
+    </div>
+    <h3 class="c-event-card__title">${title}</h3>
+    ${description ? `<p class="c-event-card__description">${description}</p>` : ''}
   </div>
 </div>`;
 }
 
 function makeCardNoImage({ slug, title, dateStr, description = '' }) {
   return `
-<div class="event-card">
-  <div class="event-details">
-    <p class="event-date">${dateStr}</p>
-    <h3><a href="https://bristolbeacon.org/whats-on/${slug}/">${title}</a></h3>
-    <p class="event-description">${description}</p>
+<div class="c-event-card">
+  <a class="c-col-card__link" href="https://bristolbeacon.org/whats-on/${slug}/">
+    <span class="u-hidden-visually">
+      ${title}
+    </span>
+  </a>
+  <div class="c-event-card__content">
+    <div class="c-event-card__meta">
+      <p class="c-event-card__meta-label c-event-card__meta-label--date">
+        <i class="fas fa-calendar-alt" aria-hidden="true"></i> ${dateStr}
+      </p>
+    </div>
+    <h3 class="c-event-card__title">${title}</h3>
+    ${description ? `<p class="c-event-card__description">${description}</p>` : ''}
   </div>
 </div>`;
 }
@@ -114,12 +139,13 @@ describe('BristolBeaconFetcher._parseEvents', () => {
     expect(e.cost).toBe('Price TBA');
   });
 
-  it('preserves an absolute image URL unchanged', () => {
+  it('extracts the 475w image URL from data-srcset', () => {
+    const img = 'https://images.bristolbeacon.org/images/show-a.jpg';
     const html = makeHtml([makeCard({
-      slug: 'show-a', title: 'Show A', dateStr: 'Sun 21 Sep 2099, 19:00',
-      image: 'https://bristolbeacon.org/images/show-a.jpg'
+      slug: 'show-a', title: 'Show A', dateStr: 'Sun 21 Sep 2099, 19:00', image: img
     })]);
-    expect(fetcher._parseEvents(html, NOW, END)[0].image).toBe('https://bristolbeacon.org/images/show-a.jpg');
+    // makeCard puts "${img} 475w" as the second srcset entry; _parseEvents picks parts[1]
+    expect(fetcher._parseEvents(html, NOW, END)[0].image).toBe(img);
   });
 
   it('prefixes a relative image URL with the site base', () => {
@@ -130,7 +156,7 @@ describe('BristolBeaconFetcher._parseEvents', () => {
     expect(fetcher._parseEvents(html, NOW, END)[0].image).toBe('https://bristolbeacon.org/images/show-b.jpg');
   });
 
-  it('sets image to null when no img tag precedes the title', () => {
+  it('sets image to null when no data-srcset precedes the card content', () => {
     const html = makeHtml([makeCardNoImage({ slug: 'no-img', title: 'No Image', dateStr: 'Mon 22 Sep 2099, 20:00' })]);
     expect(fetcher._parseEvents(html, NOW, END)[0].image).toBeNull();
   });
@@ -151,7 +177,6 @@ describe('BristolBeaconFetcher._parseEvents', () => {
   });
 
   it('includes a date-range event already running whose end is within the window', () => {
-    // Started before NOW but ends within the 7-day window
     const html = makeHtml([makeCard({ slug: 'ongoing', title: 'Ongoing Show', dateStr: 'Mon 15–Sun 27 Sep 2099' })]);
     expect(fetcher._parseEvents(html, NOW, END)).toHaveLength(1);
   });
