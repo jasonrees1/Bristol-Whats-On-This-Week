@@ -164,7 +164,12 @@ class HeadfirstFetcher {
       if (anchorTextM) {
         const rawTitle = decodeEntities(anchorTextM[1].trim());
         if (/\*?GIG CANCELLED\*?/i.test(rawTitle)) cancelled = true;
-        name = rawTitle.replace(/\*?GIG CANCELLED\*?\s*/i, '').trim();
+        name = rawTitle
+          .replace(/\*?GIG CANCELLED\*?\s*/i, '')
+          // Strip Headfirst's SEO hero-link suffix: "Las Fokin Biches in Bristol Tickets"
+          .replace(/\s+in\s+\w[\w\s]*\btickets?\s*$/i, '')
+          .replace(/\s+tickets?\s*$/i, '')
+          .trim();
         if (!name || name.length < 3) continue;
       }
 
