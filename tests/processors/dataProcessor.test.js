@@ -42,7 +42,7 @@ describe('DataProcessor', () => {
     it('should categorize concert events correctly', () => {
       const events = [{ name: 'Live Band Performance', description: 'concert' }];
       const result = processor.categorizeEvents(events);
-      expect(result[0].category).toBe('Concert');
+      expect(result[0].category).toBe('Live Music');
     });
 
     it('should categorize festival events correctly', () => {
@@ -128,7 +128,7 @@ describe('DataProcessor', () => {
 
       const result = processor.process(events);
       expect(result.length).toBe(1);
-      expect(result[0].category).toBe('Concert');
+      expect(result[0].category).toBe('Live Music');
     });
   });
 });

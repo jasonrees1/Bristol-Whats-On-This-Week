@@ -86,9 +86,10 @@ class HtmlGenerator {
 
 <script>
 var EVENTS = ${eventsJson};
-// Normalise American/British spelling
+// Normalise spellings from older generated pages
 EVENTS.forEach(function(ev) {
   if (ev.category === 'Theater') ev.category = 'Theatre';
+  if (ev.category === 'Concert') ev.category = 'Live Music';
 });
 ${this._buildScript()}
 </script>
@@ -546,30 +547,30 @@ ${this._buildScript()}
     return `
 // ── Category colours & gradients ──────────────────────────────
 var CC = {
-  Concert:'#1D6FBF', Festival:'#7B2FBE', Theatre:'#B03060',
+  'Live Music':'#1D6FBF', Festival:'#7B2FBE', Theatre:'#B03060',
   Sports:'#1A7A4A', Art:'#C03A1D', Food:'#B06010',
   Family:'#0891B2', Nightlife:'#1E2A3A', Conference:'#5C6B7A',
   Tour:'#7B5E2A', Market:'#6B7A2A', Other:'#6B7280'
 };
 var CG = {
-  Concert:   'linear-gradient(150deg,#04111E 0%,#0A2548 100%)',
-  Festival:  'linear-gradient(150deg,#120618 0%,#34105A 100%)',
-  Theatre:   'linear-gradient(150deg,#1C0612 0%,#580A2A 100%)',
-  Sports:    'linear-gradient(150deg,#021008 0%,#073420 100%)',
-  Art:       'linear-gradient(150deg,#1C0400 0%,#5A0E00 100%)',
-  Food:      'linear-gradient(150deg,#130A00 0%,#4E2400 100%)',
-  Family:    'linear-gradient(150deg,#020C18 0%,#034558 100%)',
-  Nightlife: 'linear-gradient(150deg,#040406 0%,#0C0E16 100%)',
-  Conference:'linear-gradient(150deg,#08101A 0%,#1A2A38 100%)',
-  Tour:      'linear-gradient(150deg,#0A0602 0%,#2A1A06 100%)',
-  Market:    'linear-gradient(150deg,#060A02 0%,#1A2A06 100%)',
-  Other:     'linear-gradient(150deg,#0C0C0E 0%,#1C1C24 100%)'
+  'Live Music':'linear-gradient(150deg,#04111E 0%,#0A2548 100%)',
+  Festival:   'linear-gradient(150deg,#120618 0%,#34105A 100%)',
+  Theatre:    'linear-gradient(150deg,#1C0612 0%,#580A2A 100%)',
+  Sports:     'linear-gradient(150deg,#021008 0%,#073420 100%)',
+  Art:        'linear-gradient(150deg,#1C0400 0%,#5A0E00 100%)',
+  Food:       'linear-gradient(150deg,#130A00 0%,#4E2400 100%)',
+  Family:     'linear-gradient(150deg,#020C18 0%,#034558 100%)',
+  Nightlife:  'linear-gradient(150deg,#040406 0%,#0C0E16 100%)',
+  Conference: 'linear-gradient(150deg,#08101A 0%,#1A2A38 100%)',
+  Tour:       'linear-gradient(150deg,#0A0602 0%,#2A1A06 100%)',
+  Market:     'linear-gradient(150deg,#060A02 0%,#1A2A06 100%)',
+  Other:      'linear-gradient(150deg,#0C0C0E 0%,#1C1C24 100%)'
 };
 
 // ── SVG illustrations ─────────────────────────────────────────
 var _sa = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" aria-hidden="true" style="position:absolute;top:0;left:0;width:100%;height:100%"';
 var ILLUS = {
-  Concert:
+  'Live Music':
     '<svg ' + _sa + '>' +
     '<rect x="18" y="32" width="13" height="36" rx="3" fill="rgba(255,255,255,.22)"/>' +
     '<rect x="38" y="16" width="13" height="68" rx="3" fill="rgba(255,255,255,.27)"/>' +
@@ -762,13 +763,27 @@ function renderDayTabs() {
   });
 }
 
-var CATS = ['All','Concert','Festival','Theatre','Art','Food','Nightlife','Sports','Family','Conference','Tour','Market','Other'];
+var CATS = ['All','Live Music','Nightlife','Festival','Theatre','Art','Family','Sports','Food','Market','Conference','Tour','Other'];
 function renderCatPills() {
   var el = document.getElementById('catPills');
-  el.innerHTML = CATS.map(function(c) {
+
+  // Count events per category for the current view (without any category filter)
+  var viewEvents = activeDay === 'week'
+    ? EVENTS
+    : EVENTS.filter(function(e) { return dateKey(e.date) === activeDay; });
+  var catCounts = {};
+  viewEvents.forEach(function(e) {
+    var c = e.category || 'Other';
+    catCounts[c] = (catCounts[c] || 0) + 1;
+  });
+
+  // Only show categories that have at least one event in the current view
+  var visible = CATS.filter(function(c) { return c === 'All' || catCounts[c] > 0; });
+  el.innerHTML = visible.map(function(c) {
     var active = c === 'All' ? !activeCat : activeCat === c;
     return '<button class="cat-pill' + (active ? ' active' : '') + '" data-cat="' + c + '">' + c + '</button>';
   }).join('');
+
   el.querySelectorAll('.cat-pill').forEach(function(b) {
     b.addEventListener('click', function() {
       userInteracted = true;
