@@ -154,13 +154,20 @@ class BristolBeaconFetcher {
     }
 
     if (!events.length) {
-      const h3s = (html.match(/<h3[^>]*>[\s\S]{0,200}/g) || []).slice(0, 3);
-      const hrefs = (html.match(/href="[^"]*whats-on[^"]*"/g) || []).slice(0, 5);
       const anyH3 = (html.match(/<h3/g) || []).length;
-      const nextData = html.includes('__NEXT_DATA__');
-      console.log(`Bristol Beacon: 0 events — h3 count: ${anyH3}, __NEXT_DATA__: ${nextData}`);
-      console.log(`Bristol Beacon: whats-on hrefs: ${hrefs.join(' | ') || 'none'}`);
-      if (h3s.length) console.log(`Bristol Beacon: first h3 snippet: ${h3s[0].replace(/\s+/g, ' ').slice(0, 120)}`);
+      // All distinct href domains/paths (first 10)
+      const allHrefs = (html.match(/href="(https?:\/\/[^"]{5,80})"/g) || []).slice(0, 10);
+      // Look for anchor tags wrapping figures (common event card pattern)
+      const figLinks = (html.match(/href="([^"]+)"[^>]*>\s*<figure/g) || []).slice(0, 5);
+      // First <h3> content
+      const firstH3M = html.match(/<h3[^>]*>([^<]{3,100})/);
+      // Any JSON-looking data in <script> tags
+      const dataScripts = (html.match(/<script[^>]*type="application\/json"[^>]*>([\s\S]{0,100})/g) || []).slice(0, 2);
+      console.log(`Bristol Beacon: 0 events — h3 count: ${anyH3}`);
+      console.log(`Bristol Beacon: sample hrefs: ${allHrefs.join(' | ') || 'none'}`);
+      console.log(`Bristol Beacon: figure-links (event cards?): ${figLinks.join(' | ') || 'none'}`);
+      if (firstH3M) console.log(`Bristol Beacon: first h3 text: ${firstH3M[1]}`);
+      if (dataScripts.length) console.log(`Bristol Beacon: JSON scripts: ${dataScripts[0].slice(0, 150)}`);
     }
 
     return events;
