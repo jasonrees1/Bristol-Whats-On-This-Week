@@ -1,6 +1,7 @@
 const EventFetcher = require('./fetchers/eventFetcher');
 const ArnolfiniFetcher = require('./fetchers/arnolfiniFetcher');
 const { AshtonGateFetcher } = require('./fetchers/ashtonGateFetcher');
+const { BristolBeaconFetcher } = require('./fetchers/bristolBeaconFetcher');
 const { HeadfirstFetcher } = require('./fetchers/headfirstFetcher');
 const { HippodromeFetcher } = require('./fetchers/hippodromeFetcher');
 const { OldVicFetcher } = require('./fetchers/oldVicFetcher');
@@ -24,6 +25,7 @@ async function main() {
       apiEvents,
       arnolfiniEvents,
       ashtonGateEvents,
+      beaconEvents,
       headfirstEvents,
       hippodromeEvents,
       oldVicEvents,
@@ -35,6 +37,7 @@ async function main() {
       new EventFetcher().fetchAll(),
       new ArnolfiniFetcher().fetchEvents(),
       new AshtonGateFetcher().fetchEvents(),
+      new BristolBeaconFetcher().fetchEvents(),
       new HeadfirstFetcher().fetchEvents(),
       new HippodromeFetcher().fetchEvents(),
       new OldVicFetcher().fetchEvents(),
@@ -48,6 +51,7 @@ async function main() {
       ...manualEvents,
       ...ashtonGateEvents,  // authoritative source for Bristol City home fixtures
       ...arnolfiniEvents,
+      ...beaconEvents,
       ...headfirstEvents,
       ...hippodromeEvents,
       ...oldVicEvents,

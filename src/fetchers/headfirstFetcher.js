@@ -193,6 +193,14 @@ class HeadfirstFetcher {
         ? fullPath
         : `https://www.headfirstbristol.co.uk${fullPath}`;
 
+      // Image: Headfirst renders <img src="..."> before the <a> in each card
+      const beforeHref = html.slice(Math.max(0, m.index - 1000), m.index);
+      const imgMatches = [...beforeHref.matchAll(/<img[^>]+src=(["'])([^"']+)\1/gi)];
+      const lastImgSrc = imgMatches.length ? imgMatches[imgMatches.length - 1][2] : null;
+      const image = lastImgSrc
+        ? (lastImgSrc.startsWith('http') ? lastImgSrc : `https://www.headfirstbristol.co.uk${lastImgSrc}`)
+        : null;
+
       events.push({
         id: `headfirst-${eventId}`,
         source: 'headfirst',
@@ -202,7 +210,7 @@ class HeadfirstFetcher {
         venue,
         cost: 'Price TBA',
         url,
-        image: null,
+        image,
         status: cancelled ? 'cancelled' : null
       });
     }

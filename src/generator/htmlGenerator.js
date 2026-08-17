@@ -46,9 +46,10 @@ class HtmlGenerator {
         <ul class="coverage-list">
           <li>Ticketed gigs &amp; concerts — Headfirst, Resident Advisor, Skiddle, Ticketmaster</li>
           <li>Club nights &amp; electronic music — Resident Advisor, Headfirst</li>
+          <li>Rock, pop, folk, jazz &amp; comedy — Bristol Beacon</li>
           <li>Theatre &amp; comedy — Bristol Old Vic, Bristol Hippodrome, Ticketmaster</li>
           <li>Arts, film &amp; science — Arnolfini, Watershed, We The Curious</li>
-          <li>Classical, folk &amp; world music — St George's Bristol</li>
+          <li>Classical, folk &amp; world music — St George's Bristol, Bristol Beacon</li>
           <li>Bristol City FC home fixtures — Ashton Gate Stadium (official source)</li>
           <li>Independent &amp; community events — Eventbrite, Headfirst</li>
         </ul>
@@ -80,7 +81,7 @@ class HtmlGenerator {
 
 <footer class="site-footer">
   <strong>What's On Bristol</strong> &mdash; Updated every Saturday &middot;
-  Sources: Ticketmaster &middot; Eventbrite &middot; Headfirst &middot; Resident Advisor &middot; Ashton Gate &middot; Bristol Old Vic &middot; Bristol Hippodrome &middot; St&nbsp;George's &middot; Watershed &middot; We The Curious &middot; Arnolfini
+  Sources: Ticketmaster &middot; Eventbrite &middot; Headfirst &middot; Resident Advisor &middot; Bristol Beacon &middot; Ashton Gate &middot; Bristol Old Vic &middot; Bristol Hippodrome &middot; St&nbsp;George's &middot; Watershed &middot; We The Curious &middot; Arnolfini
 </footer>
 
 <script>
