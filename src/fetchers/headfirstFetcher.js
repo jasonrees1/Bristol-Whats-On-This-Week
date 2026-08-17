@@ -139,70 +139,80 @@ class HeadfirstFetcher {
   }
 
   _parseDayEvents(html, date, sourceUrl) {
+    // Tolerates single or double quotes and both relative (/whats-on/...) and
+    // absolute (https://www.headfirstbristol.co.uk/whats-on/...) href forms.
+    const HREF_RE = /href=(["'])((?:https?:\/\/www\.headfirstbristol\.co\.uk)?\/whats-on\/([^"'\/]+)\/((?:mon|tue|wed|thu|fri|sat|sun)-\d+-[a-z]+-[^"'?#]+))\1/gi;
+
     const events = [];
+    let m;
 
-    // Primary: /whats-on/{venue-slug}/{day-abbr}-{date}-{month-abbr}-{title-slug}-{numeric-id}
-    // This is the original Headfirst URL pattern.
-    const linkRe = /href="(\/whats-on\/([^"\/]+)\/((?:mon|tue|wed|thu|fri|sat|sun)-\d+-[a-z]+-[^"]+))"[^>]*>\s*([^<]+)\s*<\/a>/gi;
+    while ((m = HREF_RE.exec(html)) !== null) {
+      const fullPath = m[2];
+      const venueSlug = m[3];
+      const eventSlug = m[4];
 
-    // Fallback: any /whats-on/{venue}/{event} link — catches if the day-prefix format changed
-    const fallbackRe = /href="(\/whats-on\/([^"\/]+)\/([^"?#\/][^"?#]+))"[^>]*>\s*([A-Z][^<]{2,100}?)\s*<\/a>/gi;
+      const idMatch = eventSlug.match(/-(\d+)$/);
+      if (!idMatch) continue;
+      const eventId = idMatch[1];
 
-    const extractWith = (re) => {
-      const found = [];
-      let m;
-      while ((m = re.exec(html)) !== null) {
-        const fullPath = m[1];
-        const venueSlug = m[2];
-        const eventSlug = m[3];
-        const rawTitle = decodeEntities(m[4]);
-        if (!rawTitle || rawTitle.length < 3) continue;
-        const cancelled = /\*?GIG CANCELLED\*?/i.test(rawTitle);
-        const title = rawTitle.replace(/\*?GIG CANCELLED\*?\s*/i, '').trim();
-        if (!title) continue;
+      let name = '';
+      let cancelled = false;
 
-        const afterLink = html.slice(m.index + m[0].length, m.index + m[0].length + 400);
-        const venueMatch = afterLink.match(/—\s*([^<\n\r]+)/);
-        const venue = venueMatch
-          ? decodeEntities(venueMatch[1].trim())
-          : venueSlug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-
-        const idMatch = eventSlug.match(/-(\d+)$/);
-        const eventId = idMatch ? idMatch[1] : eventSlug;
-        const eventDate = new Date(date);
-        eventDate.setHours(12, 0, 0, 0);
-
-        found.push({
-          id: `headfirst-${eventId}`,
-          source: 'headfirst',
-          name: title,
-          description: '',
-          date: eventDate.toISOString(),
-          venue,
-          cost: 'Price TBA',
-          url: `https://www.headfirstbristol.co.uk${fullPath}`,
-          image: null,
-          status: cancelled ? 'cancelled' : null
-        });
+      // Try to extract the title from plain anchor text (works for simple anchors and tests).
+      const afterHref = html.slice(m.index + m[0].length);
+      const anchorTextM = afterHref.match(/^[^>]*>\s*([^<]{2,}?)\s*<\/a>/);
+      if (anchorTextM) {
+        const rawTitle = decodeEntities(anchorTextM[1].trim());
+        if (/\*?GIG CANCELLED\*?/i.test(rawTitle)) cancelled = true;
+        name = rawTitle.replace(/\*?GIG CANCELLED\*?\s*/i, '').trim();
+        if (!name || name.length < 3) continue;
       }
-      return found;
-    };
 
-    const primary = extractWith(linkRe);
-    if (primary.length) {
-      events.push(...primary);
-    } else {
-      // Try the more permissive pattern and log so we can diagnose what changed
-      const fallback = extractWith(fallbackRe);
-      if (fallback.length) {
-        console.log(`Headfirst: primary regex matched 0 events; fallback matched ${fallback.length} — URL format may have changed`);
-        events.push(...fallback);
-      } else {
-        // Log a snippet of the page to help diagnose (links found, page structure)
-        const anyLinks = (html.match(/href="\/whats-on\/[^"]+"/g) || []).slice(0, 5);
-        console.log(`Headfirst: 0 events found on ${sourceUrl}`);
-        console.log('Headfirst: /whats-on links found:', anyLinks.length ? anyLinks.join(', ') : 'none');
+      // Anchor contained nested elements — derive the name from the URL slug instead.
+      if (!name) {
+        const slugBody = eventSlug
+          .replace(/^(?:mon|tue|wed|thu|fri|sat|sun)-\d+-[a-z]+-/i, '')
+          .replace(/-\d+$/, '');
+        name = slugBody.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        if (!name || name.length < 3) continue;
+        const ctx = html.slice(Math.max(0, m.index - 100), m.index + m[0].length + 500);
+        if (/GIG CANCELLED/i.test(ctx)) cancelled = true;
       }
+
+      // Venue: look for an em-dash pattern after the link, else title-case the slug.
+      const afterLink = html.slice(m.index, m.index + m[0].length + 400);
+      const venueMatch = afterLink.match(/—\s*([^<\n\r]+)/);
+      const venue = venueMatch
+        ? decodeEntities(venueMatch[1].trim())
+        : venueSlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+      const eventDate = new Date(date);
+      eventDate.setHours(12, 0, 0, 0);
+
+      const url = fullPath.startsWith('http')
+        ? fullPath
+        : `https://www.headfirstbristol.co.uk${fullPath}`;
+
+      events.push({
+        id: `headfirst-${eventId}`,
+        source: 'headfirst',
+        name,
+        description: '',
+        date: eventDate.toISOString(),
+        venue,
+        cost: 'Price TBA',
+        url,
+        image: null,
+        status: cancelled ? 'cancelled' : null
+      });
+    }
+
+    if (!events.length) {
+      const anyLinks = (
+        html.match(/href=["'](?:https?:\/\/www\.headfirstbristol\.co\.uk)?\/whats-on\/[^"']+["']/g) || []
+      ).slice(0, 5);
+      console.log(`Headfirst: 0 events found on ${sourceUrl}`);
+      console.log('Headfirst: /whats-on links found:', anyLinks.length ? anyLinks.join(', ') : 'none');
     }
 
     return events;
