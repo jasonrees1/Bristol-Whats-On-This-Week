@@ -72,13 +72,13 @@ class BristolBeaconFetcher {
         catUrls.add(raw.startsWith('http') ? raw : `https://bristolbeacon.org${raw}`);
       }
 
-      // Hardcoded fallback if main page yields no category links (AJAX-driven listing)
-      if (!catUrls.size) {
-        [
-          'comedy', 'jazz', 'rock-pop-indie', 'folk', 'electronic-dance',
-          'soul-rb', 'world-roots-folk', 'classical', 'orchestral', 'gigs-concerts', 'dance'
-        ].forEach(c => catUrls.add(`https://bristolbeacon.org/whats-on/category/${c}/`));
-      }
+      // Always supplement with the comprehensive known-category list so we never miss
+      // categories that the main-page nav omits (e.g. family-events, exhibitions, talks).
+      [
+        'comedy', 'jazz', 'rock-pop-indie', 'folk', 'electronic-dance',
+        'soul-rb', 'world-roots-folk', 'classical', 'orchestral', 'gigs-concerts', 'dance',
+        'family-events', 'exhibitions', 'film', 'talks-events', 'free-events'
+      ].forEach(c => catUrls.add(`https://bristolbeacon.org/whats-on/category/${c}/`));
 
       console.log(`Bristol Beacon: fetching ${catUrls.size} category pages`);
 
