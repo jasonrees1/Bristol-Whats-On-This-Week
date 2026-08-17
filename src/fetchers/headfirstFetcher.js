@@ -223,6 +223,83 @@ class HeadfirstFetcher {
       console.log('Headfirst: /whats-on links found:', anyLinks.length ? anyLinks.join(', ') : 'none');
     }
 
+    // ── JSON-LD supplement ──────────────────────────────────────────────────────
+    // Headfirst embeds schema.org JSON-LD for every event on the page, including
+    // some that have no corresponding <a> link in the HTML (e.g. Butcher Brown).
+    // Parse it and add any events not already captured above.
+    const ldScriptM = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
+    if (ldScriptM) {
+      try {
+        const ldItems = JSON.parse(ldScriptM[1]);
+        if (Array.isArray(ldItems)) {
+          // Normalise a name for fuzzy dedup: lowercase, strip punctuation
+          function ldNorm(n) {
+            return n.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+          }
+          const htmlNorms = events.map(e => ldNorm(e.name));
+
+          for (const ev of ldItems) {
+            if (!ev.name) continue;
+
+            let name = decodeEntities(String(ev.name));
+            // ALL-CAPS names (e.g. "BUTCHER BROWN + ALAMAY") → title case
+            if (name.length > 1 && name === name.toUpperCase()) {
+              name = name.replace(/\b\w+/g, w => w[0] + w.slice(1).toLowerCase());
+            }
+            if (!name || name.length < 2) continue;
+
+            // Skip if already captured via an HTML link (fuzzy: either name contains the other)
+            const norm = ldNorm(name);
+            if (htmlNorms.some(n => n.includes(norm) || norm.includes(n))) continue;
+
+            // Parse startDate: "2026-08-18T19:00" — add :00 for a valid ISO string
+            let eventDate = new Date(date);
+            eventDate.setHours(12, 0, 0, 0);
+            if (ev.startDate) {
+              const fixed = String(ev.startDate).replace(/T(\d{1,2}:\d{2})$/, 'T$1:00');
+              const d = new Date(fixed);
+              if (!isNaN(d.getTime())) eventDate = d;
+            }
+
+            const venue = decodeEntities(String(ev.location?.name || 'Venue TBA'));
+            // Direct event URL is always empty in Headfirst JSON-LD; use venue page
+            const url = ev.location?.sameAs || sourceUrl;
+
+            let cost = 'Price TBA';
+            const offer = Array.isArray(ev.offers) ? ev.offers[0] : null;
+            if (offer && offer.price != null) {
+              const pence = parseInt(offer.price, 10);
+              if (!isNaN(pence)) cost = pence === 0 ? 'Free' : '£' + Math.round(pence / 100);
+              if (String(offer.availability || '').includes('SoldOut')) cost = 'Sold Out';
+            }
+
+            const cancelled = String(ev.eventStatus || '').includes('Cancelled');
+            const soldOut = String(offer?.availability || '').includes('SoldOut');
+
+            const idSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').slice(0, 36);
+            const dateStr = eventDate.toISOString().split('T')[0];
+
+            events.push({
+              id: `headfirst-ld-${dateStr}-${idSlug}`,
+              source: 'headfirst',
+              name,
+              description: '',
+              date: eventDate.toISOString(),
+              venue,
+              cost,
+              url,
+              image: null,
+              status: cancelled ? 'cancelled' : soldOut ? 'sold_out' : null
+            });
+
+            htmlNorms.push(norm); // prevent intra-LD duplicates
+          }
+        }
+      } catch (e) {
+        console.log('Headfirst: JSON-LD parse error:', e.message);
+      }
+    }
+
     return events;
   }
 }
