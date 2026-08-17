@@ -109,44 +109,69 @@ class BristolBeaconFetcher {
   }
 
   _parseEvents(html, now, endDate) {
-    // Bristol Beacon card structure (category pages):
-    // <a class="c-col-card__link" href="URL"><span class="u-hidden-visually">NAME</span></a>
-    // <div class="c-event-card__image"><img data-srcset="URL 16w, URL 475w, ..."></div>
-    // <div class="c-event-card__content">
-    //   <p class="...--date"><i class="..."></i> DATE TEXT</p>
-    //   <h3 class="c-event-card__title">TITLE</h3>
-    // </div>
-    const CARD_RE = /<a\s[^>]*class="[^"]*c-col-card__link[^"]*"[^>]*href="(https?:\/\/bristolbeacon\.org\/whats-on\/(?!category\/)[^"?#]+)"[^>]*>\s*<span[^>]*>\s*([^<]{1,120}?)\s*<\/span>/gi;
+    // Bristol Beacon category-page card structure:
+    //
+    //   <a class="c-col-card__link" href="https://bristolbeacon.org/whats-on/slug/">
+    //     <span class="u-hidden-visually">
+    //         Event Name     </span>
+    //   </a>
+    //   <div class="c-event-card__image">
+    //     <img ... data-srcset="url 16w, url 475w, ...">
+    //   </div>
+    //   <div class="c-event-card__content">
+    //     <p class="c-event-card__meta-label c-event-card__meta-label--date">
+    //       <i class="fas fa-calendar-alt" aria-hidden="true"></i> DATE TEXT
+    //     </p>
+    //     <h3 class="c-event-card__title">Title</h3>
+    //   </div>
+    //
+    // Strategy: find the c-col-card__link opening tag (single line), then scan
+    // forward in two bounded slices — near (200 chars) for the name span,
+    // far (1500 chars) for date, image, and cancelled flag.
+
+    // Match the <a> opening tag that carries c-col-card__link (stays on one line)
+    const LINK_RE = /href="(https?:\/\/bristolbeacon\.org\/whats-on\/(?!category\/)[^"?#\/][^"?#]*)"[^>]*class="[^"]*c-col-card__link|class="[^"]*c-col-card__link[^"]*"[^>]*href="(https?:\/\/bristolbeacon\.org\/whats-on\/(?!category\/)[^"?#\/][^"?#]*)"/gi;
 
     const events = [];
     const seen = new Set();
     let m;
 
-    while ((m = CARD_RE.exec(html)) !== null) {
-      const url = m[1].trim();
-      const name = m[2].trim()
+    while ((m = LINK_RE.exec(html)) !== null) {
+      // group 1 = href-first order, group 2 = class-first order
+      const url = (m[1] || m[2] || '').trim();
+      if (!url) continue;
+      if (seen.has(url)) continue;
+
+      // Bounded slice after the end of the matched tag for name, date, image
+      const tagEnd = html.indexOf('>', m.index + m[0].length);
+      if (tagEnd === -1) continue;
+      const after = html.slice(tagEnd + 1, tagEnd + 1 + 1500);
+
+      // Name: first <span> after the opening tag (holds "u-hidden-visually" text)
+      const spanM = after.match(/<span[^>]*>([\s\S]*?)<\/span>/i);
+      if (!spanM) continue;
+      const name = spanM[1]
+        .replace(/\n/g, ' ').replace(/\s+/g, ' ')
         .replace(/&amp;/g, '&')
         .replace(/&#\d+;/g, '')
         .replace(/&[a-z]+;/g, '')
         .trim();
-
       if (!name || name.length < 2) continue;
-      if (seen.has(url)) continue;
       seen.add(url);
 
-      // Look in the 1500 chars after the matched anchor for date, image, and cancelled flag
-      const after = html.slice(m.index + m[0].length, m.index + m[0].length + 1500);
-
-      // Date: text following the icon <i> tag inside the --date paragraph
+      // Date: text after the <i> icon inside the --date paragraph
       const dateParaM = after.match(
-        /<p\s[^>]*class="[^"]*--date[^"]*"[^>]*>(?:[^<]*<[^>]+>[^<]*<\/[^>]+>)*\s*([^<]{3,120})/i
+        /<p[^>]*class="[^"]*--date[^"]*"[^>]*>([\s\S]*?)<\/p>/i
       );
       let dateStr = '';
       if (dateParaM) {
-        dateStr = dateParaM[1].trim()
+        // Strip all tags (including the <i> icon) then take the remaining text
+        dateStr = dateParaM[1]
+          .replace(/<[^>]+>/g, '')
           .replace(/&ndash;/g, '–')
           .replace(/&amp;/g, '&')
           .replace(/&#\d+;/g, '')
+          .replace(/\s+/g, ' ')
           .trim();
       }
       if (!dateStr) continue;
@@ -183,7 +208,7 @@ class BristolBeaconFetcher {
         }
       }
 
-      const cancelled = /\bCANCELLED\b/i.test(after.slice(0, 500));
+      const cancelled = /\bCANCELLED\b/i.test(after.slice(0, 600));
       const slug = url
         .replace(/^https?:\/\/bristolbeacon\.org\/whats-on\//, '')
         .replace(/\/+$/, '');
