@@ -53,21 +53,34 @@ class DataProcessor {
   categorizeEvents(events) {
     return events.map(event => ({
       ...event,
-      category: this.determineCategory(event.name, event.description)
+      category: this.determineCategory(event.name, event.description, event.venue)
     }));
   }
 
-  determineCategory(name, description) {
+  // Known Bristol live music venues — used as a fallback signal when name/description
+  // contain no genre keywords (e.g. a band name alone gives no category signal).
+  static MUSIC_VENUES = new Set([
+    'exchange', 'strange brew', 'thekla', 'louisiana', 'fleece', 'grain barge',
+    'marble factory', 'rough trade', 'o2 academy', 'anson rooms', 'crofters rights',
+    'stokes croft music hall', 'surrey vaults', 'the lanes', 'motion', 'lakota',
+    'trinity centre', 'bristol beacon', 'st george', 'colston hall'
+  ]);
+
+  determineCategory(name, description, venue = '') {
     const text = `${name} ${description}`.toLowerCase();
 
     // Ordered: most specific / most common Bristol event types first.
-    // Avoid short words that appear as substrings ('art' in 'party', 'show' in descriptions, etc.)
+    // Avoid short words that appear as substrings ('art' in 'party', etc.)
     const categories = [
       ['Festival',    ['festival']],
       ['Nightlife',   ['rave', 'club night', 'nightclub', 'dj set', 'dnb', 'drum and bass', 'drum n bass', 'house music', 'techno', 'grime', 'bass music', 'after dark', 'after-dark', 'disco', 'party', 'nightlife', 'dj']],
-      ['Live Music',  ['concert', 'live music', 'live band', 'live act', 'open mic', 'musician', 'orchestra', 'choir', 'jam night', 'sound system', 'gig', 'music']],
+      ['Live Music',  ['concert', 'live music', 'live band', 'live act', 'open mic', 'musician',
+                       'orchestra', 'choir', 'jam night', 'sound system', 'gig', 'music',
+                       'jazz', 'blues', 'soul', 'funk', 'folk', 'rock', 'indie', 'punk',
+                       'hip-hop', 'hip hop', 'r&b', 'rnb', 'reggae', 'acoustic', 'afrobeats',
+                       'singer-songwriter', 'world music', 'classical', 'ambient']],
       ['Theater',     ['theatre', 'theater', 'comedy', 'pantomime', 'stand-up', 'improv', 'comedian', 'cabaret', 'burlesque']],
-      ['Sports',      ['football', 'rugby', 'cricket', 'tennis', 'boxing', 'marathon', 'athletics', 'triathlon', 'cycling', 'sports', 'tournament']],
+      ['Sports',      ['football', 'rugby', 'cricket', 'tennis', 'boxing', 'marathon', 'athletics', 'triathlon', 'cycling', 'sports', 'tournament', 'wrestling']],
       ['Art',         ['gallery', 'exhibition', 'visual art', 'art show', 'art fair', 'life drawing', 'painting class', 'printmaking', 'sculpture', 'ceramics', 'museum']],
       ['Family',      ['family', 'kids', 'children', 'toddler', 'youth']],
       ['Food',        ['restaurant', 'food', 'cafe', 'tasting', 'supper club', 'street food', 'pop-up dining']],
@@ -79,6 +92,15 @@ class DataProcessor {
     for (const [category, keywords] of categories) {
       if (keywords.some(keyword => text.includes(keyword))) {
         return category;
+      }
+    }
+
+    // Venue-based fallback: if no keywords matched and the venue is a known Bristol
+    // live music venue, the event is almost certainly a gig.
+    if (venue) {
+      const venueLower = venue.toLowerCase();
+      for (const v of DataProcessor.MUSIC_VENUES) {
+        if (venueLower.includes(v)) return 'Live Music';
       }
     }
 
