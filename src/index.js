@@ -4,6 +4,7 @@ const { AshtonGateFetcher } = require('./fetchers/ashtonGateFetcher');
 const { HeadfirstFetcher } = require('./fetchers/headfirstFetcher');
 const { HippodromeFetcher } = require('./fetchers/hippodromeFetcher');
 const { OldVicFetcher } = require('./fetchers/oldVicFetcher');
+const { ResidentAdvisorFetcher } = require('./fetchers/residentAdvisorFetcher');
 const { StGeorgesFetcher } = require('./fetchers/stGeorgesFetcher');
 const { WatershedFetcher } = require('./fetchers/watershedFetcher');
 const { WethecuriousFetcher } = require('./fetchers/wethecuriousFetcher');
@@ -26,6 +27,7 @@ async function main() {
       headfirstEvents,
       hippodromeEvents,
       oldVicEvents,
+      raEvents,
       stGeorgesEvents,
       watershedEvents,
       wtcEvents
@@ -36,6 +38,7 @@ async function main() {
       new HeadfirstFetcher().fetchEvents(),
       new HippodromeFetcher().fetchEvents(),
       new OldVicFetcher().fetchEvents(),
+      new ResidentAdvisorFetcher().fetchEvents(),
       new StGeorgesFetcher().fetchEvents(),
       new WatershedFetcher().fetchEvents(),
       new WethecuriousFetcher().fetchEvents()
@@ -48,6 +51,7 @@ async function main() {
       ...headfirstEvents,
       ...hippodromeEvents,
       ...oldVicEvents,
+      ...raEvents,
       ...stGeorgesEvents,
       ...watershedEvents,
       ...wtcEvents,

@@ -42,7 +42,7 @@ class HtmlGenerator {
 
 <footer class="site-footer">
   <strong>What's On Bristol</strong> &mdash; Updated every Saturday &middot;
-  Sources: Ticketmaster &middot; Eventbrite &middot; Headfirst &middot; Ashton Gate &middot; Bristol Old Vic &middot; Bristol Hippodrome &middot; St&nbsp;George's &middot; Watershed &middot; We The Curious &middot; Arnolfini
+  Sources: Ticketmaster &middot; Eventbrite &middot; Headfirst &middot; Resident Advisor &middot; Ashton Gate &middot; Bristol Old Vic &middot; Bristol Hippodrome &middot; St&nbsp;George's &middot; Watershed &middot; We The Curious &middot; Arnolfini
 </footer>
 
 <script>
