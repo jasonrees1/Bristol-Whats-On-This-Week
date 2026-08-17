@@ -1,6 +1,9 @@
 class HtmlGenerator {
   generate(events) {
     const eventsJson = JSON.stringify(events);
+    const generatedOn = new Date().toLocaleDateString('en-GB', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,6 +31,41 @@ class HtmlGenerator {
 
 <div class="cat-strip" role="group" aria-label="Filter by category">
   <div class="cat-pills" id="catPills"></div>
+</div>
+
+<div class="coverage-bar" id="coverageBar">
+  <button class="coverage-toggle" id="coverageToggle" aria-expanded="false" aria-controls="coverageBody">
+    <span class="coverage-icon">ⓘ</span>
+    <span class="coverage-label">About this guide &amp; coverage gaps</span>
+    <span class="coverage-caret">›</span>
+  </button>
+  <div class="coverage-body" id="coverageBody" role="region" aria-label="Coverage information">
+    <div class="coverage-content">
+      <div class="coverage-col">
+        <h4 class="coverage-col-title">What we cover</h4>
+        <ul class="coverage-list">
+          <li>Ticketed gigs &amp; concerts — Headfirst, Resident Advisor, Skiddle, Ticketmaster</li>
+          <li>Club nights &amp; electronic music — Resident Advisor, Headfirst</li>
+          <li>Theatre &amp; comedy — Bristol Old Vic, Bristol Hippodrome, Ticketmaster</li>
+          <li>Arts, film &amp; science — Arnolfini, Watershed, We The Curious</li>
+          <li>Classical, folk &amp; world music — St George's Bristol</li>
+          <li>Bristol City FC home fixtures — Ashton Gate Stadium (official source)</li>
+          <li>Independent &amp; community events — Eventbrite, Headfirst</li>
+        </ul>
+      </div>
+      <div class="coverage-col">
+        <h4 class="coverage-col-title">What might be missing</h4>
+        <ul class="coverage-list">
+          <li><strong>Walk-in pub gigs</strong> — many Bristol pubs host bands without listing them on any platform; check the pub's own social media or give them a call</li>
+          <li><strong>Mid-week additions</strong> — this guide refreshes every Saturday; events announced after that won't appear until next week's update</li>
+          <li><strong>Bristol Rovers fixtures</strong> — Memorial Stadium is not yet integrated</li>
+          <li><strong>Hyper-local events</strong> — open mics, community nights, and events advertised only by flyer or in Facebook groups</li>
+          <li><strong>Private &amp; members-only events</strong> — not publicly listed</li>
+        </ul>
+      </div>
+    </div>
+    <p class="coverage-updated">Last updated: ${generatedOn} &middot; Refreshes every Saturday at 10 AM</p>
+  </div>
 </div>
 
 <main class="main">
@@ -366,6 +404,98 @@ ${this._buildScript()}
     padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
   }
   .site-footer strong { color: var(--ink-2); font-weight: 600; }
+
+  /* ── Coverage bar ───────────────────────────────────────── */
+  .coverage-bar {
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+    transition: background 0.25s, border-color 0.25s;
+  }
+  .coverage-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ink-2);
+    text-align: left;
+    min-height: 40px;
+    transition: color 0.15s;
+  }
+  .coverage-toggle:hover { color: var(--amber); }
+  .coverage-icon {
+    font-size: 14px;
+    line-height: 1;
+    color: var(--amber);
+    flex-shrink: 0;
+  }
+  .coverage-label { flex: 1; }
+  .coverage-caret {
+    font-size: 16px;
+    color: var(--mist);
+    transition: transform 0.25s ease;
+    display: inline-block;
+  }
+  .coverage-bar.is-open .coverage-caret { transform: rotate(90deg); }
+
+  .coverage-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.32s ease;
+  }
+  .coverage-body.open { max-height: 900px; }
+
+  .coverage-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 36px;
+    padding: 4px 20px 14px;
+  }
+  @media (max-width: 560px) {
+    .coverage-content { grid-template-columns: 1fr; gap: 18px; }
+  }
+
+  .coverage-col-title {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 9px;
+  }
+  .coverage-list {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .coverage-list li {
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.5;
+    padding-left: 14px;
+    position: relative;
+  }
+  .coverage-list li::before { content: '·'; position: absolute; left: 0; color: var(--mist); }
+  .coverage-list strong { color: var(--ink); font-weight: 600; }
+
+  .coverage-updated {
+    padding: 0 20px 14px;
+    font-size: 11px;
+    font-family: "Courier New", Courier, monospace;
+    color: var(--mist);
+    border-top: 1px solid var(--rule);
+    margin-top: 4px;
+    padding-top: 10px;
+  }
+
+  @media (max-width: 380px) {
+    .coverage-toggle  { padding: 10px 14px; }
+    .coverage-content { padding: 4px 14px 12px; }
+    .coverage-updated { padding: 10px 14px 12px; }
+  }
 
   /* ── Mobile & touch optimisation ───────────────────────── */
   /* Remove tap flash on iOS */
@@ -746,6 +876,34 @@ function renderEvents() {
 }
 
 function renderAll() { renderDayTabs(); renderCatPills(); renderEvents(); scrollToMain(); }
+
+// ── Coverage bar ───────────────────────────────────────────────
+(function() {
+  var bar = document.getElementById('coverageBar');
+  var btn = document.getElementById('coverageToggle');
+  var body = document.getElementById('coverageBody');
+  if (!bar || !btn || !body) return;
+
+  var open = false;
+  try { open = localStorage.getItem('coverageOpen') === '1'; } catch(e) {}
+
+  function apply(state) {
+    open = state;
+    if (state) {
+      bar.classList.add('is-open');
+      body.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
+    } else {
+      bar.classList.remove('is-open');
+      body.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+    }
+    try { localStorage.setItem('coverageOpen', state ? '1' : '0'); } catch(e) {}
+  }
+
+  apply(open);
+  btn.addEventListener('click', function() { apply(!open); });
+}());
 
 // ── Theme ──────────────────────────────────────────────────────
 var theme = 'dark';

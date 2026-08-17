@@ -128,10 +128,15 @@ class HippodromeFetcher {
       const title = decodeEntities(titleM[1]);
       if (!title || title.length < 3) continue;
 
-      // Date string: "Sat 15 Aug 2026" or "Tue 18 Aug - Sun 23 Aug 2026"
+      // Date string: "Sat 15 Aug 2026", "Tue 18 Aug - Sun 23 Aug 2026", or
+      // "Tue 6 Oct - Sat 11 Oct 2099" (year only at end of range)
       const dateM = context.match(
         new RegExp(
-          `\\d{1,2}\\s+(?:${MONTH_PAT})\\s+\\d{4}(?:\\s*[-–]\\s*(?:\\w+\\s+)?\\d{1,2}\\s+(?:${MONTH_PAT})\\s+\\d{4})?`,
+          // Range first (year may only appear once, at the end)
+          `(?:\\w+\\s+)?\\d{1,2}\\s+(?:${MONTH_PAT})(?:\\s+\\d{4})?\\s*[-–]\\s*(?:\\w+\\s+)?\\d{1,2}\\s+(?:${MONTH_PAT})\\s+\\d{4}` +
+          `|` +
+          // Single date fallback
+          `(?:\\w+\\s+)?\\d{1,2}\\s+(?:${MONTH_PAT})\\s+\\d{4}`,
           'i'
         )
       );
