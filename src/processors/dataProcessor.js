@@ -41,12 +41,13 @@ class DataProcessor {
   }
 
   getThisWeekEvents(events) {
-    const now = new Date();
-    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0); // start of today so afternoon runs don't drop same-day events
+    const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     return events.filter(event => {
       const eventDate = new Date(event.date);
-      return eventDate >= now && eventDate <= weekFromNow;
+      return eventDate >= today && eventDate <= weekFromNow;
     });
   }
 
