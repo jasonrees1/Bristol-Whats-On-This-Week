@@ -75,14 +75,33 @@ class HeadfirstFetcher {
 
   async _fetchDay(date) {
     const url = getDayUrl(date);
+    // Headfirst redirects today's date URL to /whats-on/tonight (server-side).
+    // Cloudflare CDN may cache /tonight and serve stale content to non-UK servers
+    // (e.g. GitHub Actions). Use no-cache headers on all requests and detect any
+    // redirect so we can log and debug caching issues.
+    const HEADERS = {
+      'User-Agent': 'Mozilla/5.0 (compatible; Bristol Events Guide/1.0)',
+      'Accept': 'text/html',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache'
+    };
     try {
-      const response = await axios.get(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; Bristol Events Guide/1.0)',
-          'Accept': 'text/html'
-        },
-        timeout: 15000
+      // First probe: disable automatic redirects so we can detect them
+      let response = await axios.get(url, {
+        headers: HEADERS,
+        timeout: 15000,
+        maxRedirects: 0,
+        validateStatus: s => (s >= 200 && s < 300) || s === 301 || s === 302
       });
+      // If redirected (e.g. today's date → /whats-on/tonight), follow manually
+      if (response.status === 301 || response.status === 302) {
+        const loc = response.headers.location || '';
+        const finalUrl = loc.startsWith('http')
+          ? loc
+          : `https://www.headfirstbristol.co.uk${loc}`;
+        console.log(`Headfirst: redirect ${url} → ${finalUrl}`);
+        response = await axios.get(finalUrl, { headers: HEADERS, timeout: 15000 });
+      }
       const html = response.data || '';
       console.log(`Headfirst: fetched ${url} (${html.length} bytes)`);
 
